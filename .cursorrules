@@ -1,0 +1,48 @@
+# Teder-Yeshar-El: AI Assistant Rules
+
+## 1. Project Context & Identity
+
+- **Name:** Teder-Yeshar-El (תדר-ישר-אל).
+- **Language:** Hebrew (100% RTL - Right to Left).
+- **Core Paradigm:** Mobile-First, immersive "Matrix Navigation", high focus on content readability and smooth UX.
+
+## 2. Tech Stack Requirements
+
+- Next.js 14+ (App Router only. No Pages router).
+- React 18+ (Server Components by default).
+- TypeScript (Strict mode).
+- Tailwind CSS & Shadcn/UI.
+- Framer Motion (for animations).
+- Supabase (PostgreSQL, Auth, RLS, @supabase/ssr).
+
+## 3. Architecture & Clean Code Rules
+
+- **Server-First:** Always use React Server Components (RSC) by default. Only add `'use client'` at the very top of the file when browser APIs, React hooks (`useState`, `useEffect`), or interactivity (like Framer Motion) are strictly required.
+- **Modularity:** Break down large components into smaller, reusable UI components.
+- **Data Fetching:** Fetch data on the Server side (in `page.tsx` or Server Components) and pass it down as props. Use Server Actions (`'use server'`) for data mutations.
+- **DRY & SOLID:** Avoid code duplication. Ensure functions do one thing well (Single Responsibility).
+- **Naming Conventions:** Use `PascalCase` for components, `camelCase` for variables and functions, and `UPPER_SNAKE_CASE` for global constants.
+
+## 4. TypeScript & Typing
+
+- No implicit or explicit `any`. Always define proper `type` or `interface`.
+- Use Supabase generated types if available, or maintain strict custom types for DB entities (e.g., `Video`, `Series`, `Category`).
+- Return types must be explicit for complex functions.
+
+## 5. UI, Styling & RTL Enforcement
+
+- **Mobile-First:** Design for mobile screens first without prefixes, then use `md:`, `lg:` for larger screens.
+- **RTL (Right-to-Left):** Always consider Hebrew layout. Avoid hardcoded physical directions (like `ml-4` or `pr-2`) if logical properties are better (though Tailwind standard is fine as long as `dir="rtl"` is respected).
+- **Theme:** Maintain the dark theme (`bg-black`, white/light-gray text).
+- **Shadcn/UI:** Use shadcn components where applicable instead of reinventing the wheel.
+
+## 6. Security & Supabase
+
+- **Never expose sensitive keys.** Only `NEXT_PUBLIC_` variables are allowed on the client.
+- **RLS Awareness:** Rely on Supabase Row Level Security. Do not write complex application-level logic for things RLS should handle.
+- **Supabase Clients:** Use the pre-configured clients in `utils/supabase/server.ts` or `client.ts` depending on the environment.
+
+## 7. Commits & Documentation
+
+- Add concise, meaningful JSDoc comments to complex utility functions.
+- When generating code, prioritize readability over clever one-liners.
