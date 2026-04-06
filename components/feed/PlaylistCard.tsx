@@ -15,8 +15,6 @@ export interface PlaylistCardProps {
   onFocus?: () => void;
 }
 
-const DEFAULT_DESCRIPTION = "צפו באוסף הסרטונים המלא";
-
 /**
  * Editorial portrait card linking to the playlist dossier page.
  */
@@ -62,15 +60,17 @@ export function PlaylistCard({
             alt=""
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-3 pb-4 pt-16">
+            <h2 className="font-heading text-xl font-bold leading-tight text-white drop-shadow-sm sm:text-2xl">
+              {playlist.title}
+            </h2>
+          </div>
         </div>
-        <div className="flex flex-col gap-1">
-          <h2 className="font-heading text-2xl font-bold tracking-tight text-zinc-900">
-            {playlist.title}
-          </h2>
+        {playlist.description !== null && playlist.description.trim() !== "" ? (
           <p className="line-clamp-2 text-sm leading-relaxed text-zinc-600">
-            {playlist.description?.trim() || DEFAULT_DESCRIPTION}
+            {playlist.description.trim()}
           </p>
-        </div>
+        ) : null}
       </motion.div>
     </Link>
   );
