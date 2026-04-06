@@ -1,15 +1,70 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { VideoFocusRoom } from "@/components/video/VideoFocusRoom";
+import { SITE_ORIGIN } from "@/lib/site";
 import { createClient } from "@/utils/supabase/server";
 
 import type { Video } from "@/types/database";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
+const DEFAULT_DESCRIPTION =
+  "ארכיון חשיפות, עדויות דוקומנטריות וחיפוש בלתי מתפשר אחר האמת.";
+
 function firstParam(value: string | string[] | undefined): string | undefined {
   if (value === undefined) return undefined;
   return Array.isArray(value) ? value[0] : value;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const supabase = createClient();
+  const { data: video, error } = await supabase
+    .from("videos")
+    .select("title, description, cover_image_url")
+    .eq("id", params.id)
+    .maybeSingle();
+
+  if (error !== null || video === null) {
+    return { title: "סרטון" };
+  }
+
+  const v = video as Pick<
+    Video,
+    "title" | "description" | "cover_image_url"
+  >;
+  const description =
+    v.description !== null && v.description.trim() !== ""
+      ? v.description.trim()
+      : DEFAULT_DESCRIPTION;
+  const cover = v.cover_image_url?.trim();
+  const images =
+    cover !== undefined && cover !== ""
+      ? [{ url: cover, alt: v.title }]
+      : [{ url: "/logo.png", alt: v.title }];
+
+  return {
+    title: v.title,
+    description,
+    openGraph: {
+      title: v.title,
+      description,
+      type: "website",
+      locale: "he_IL",
+      siteName: "תדר-ישר-אל",
+      images,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: v.title,
+      description,
+      images: images.map((i) => i.url),
+    },
+  };
 }
 
 export default async function VideoPage({
@@ -59,6 +114,12 @@ export default async function VideoPage({
     }
   }
 
+  const shareUrl = `${SITE_ORIGIN}/video/${row.id}`;
+  const shareText =
+    row.description !== null && row.description.trim() !== ""
+      ? row.description.trim()
+      : DEFAULT_DESCRIPTION;
+
   return (
     <VideoFocusRoom
       video={{
@@ -69,6 +130,8 @@ export default async function VideoPage({
       }}
       backHref={backHref}
       backText={backText}
+      shareUrl={shareUrl}
+      shareText={shareText}
     />
   );
 }

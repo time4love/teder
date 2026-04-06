@@ -6,6 +6,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { AlignRight, ArrowRight, Play } from "lucide-react";
 
+import { ShareButton } from "@/components/shared/ShareButton";
 import { cn } from "@/lib/utils";
 import { getYouTubeVideoId } from "@/utils/youtube";
 
@@ -20,6 +21,8 @@ export interface VideoFocusRoomProps {
   video: VideoFocusRoomVideo;
   backHref: string;
   backText: string;
+  shareUrl: string;
+  shareText: string;
 }
 
 /**
@@ -29,6 +32,8 @@ export function VideoFocusRoom({
   video,
   backHref,
   backText,
+  shareUrl,
+  shareText,
 }: VideoFocusRoomProps): ReactElement {
   const [mode, setMode] = useState<"watch" | "read">("watch");
 
@@ -48,7 +53,7 @@ export function VideoFocusRoom({
           : "bg-[#F9F9F7]",
       )}
     >
-      <div className="flex items-center justify-between border-b border-zinc-200/80 bg-white/90 p-4 backdrop-blur-sm md:px-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200/80 bg-white/90 p-4 backdrop-blur-sm md:px-8">
         <Link
           href={backHref}
           className="inline-flex items-center text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
@@ -57,37 +62,45 @@ export function VideoFocusRoom({
           {backText}
         </Link>
 
-        <div
-          className="flex rounded-full border border-zinc-200 bg-zinc-200/50 p-1"
-          role="group"
-          aria-label="מצב תצוגה"
-        >
-          <button
-            type="button"
-            onClick={() => setMode("watch")}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition",
-              mode === "watch"
-                ? "bg-white text-zinc-900 shadow-sm"
-                : "text-zinc-600 hover:text-zinc-800",
-            )}
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+          <ShareButton
+            title={video.title}
+            text={shareText}
+            url={shareUrl}
+            className="border-zinc-300 bg-white/80"
+          />
+          <div
+            className="flex rounded-full border border-zinc-200 bg-zinc-200/50 p-1"
+            role="group"
+            aria-label="מצב תצוגה"
           >
-            <Play className="size-3.5" aria-hidden />
-            צפייה
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("read")}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition",
-              mode === "read"
-                ? "bg-white text-zinc-900 shadow-sm"
-                : "text-zinc-600 hover:text-zinc-800",
-            )}
-          >
-            <AlignRight className="size-3.5" aria-hidden />
-            קריאה
-          </button>
+            <button
+              type="button"
+              onClick={() => setMode("watch")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition",
+                mode === "watch"
+                  ? "bg-white text-zinc-900 shadow-sm"
+                  : "text-zinc-600 hover:text-zinc-800",
+              )}
+            >
+              <Play className="size-3.5" aria-hidden />
+              צפייה
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("read")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition",
+                mode === "read"
+                  ? "bg-white text-zinc-900 shadow-sm"
+                  : "text-zinc-600 hover:text-zinc-800",
+              )}
+            >
+              <AlignRight className="size-3.5" aria-hidden />
+              קריאה
+            </button>
+          </div>
         </div>
       </div>
 

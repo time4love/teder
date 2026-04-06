@@ -20,8 +20,18 @@ const frankRuhlLibre = Frank_Ruhl_Libre({
 });
 
 export const metadata: Metadata = {
-  title: "תדר-ישר-אל",
-  description: "Teder-Yeshar-El",
+  metadataBase: new URL("https://tederyesharel.co.il"),
+  title: {
+    template: "%s | תדר-ישר-אל",
+    default: "תדר-ישר-אל | ארכיון דוקומנטרי",
+  },
+  description:
+    "ארכיון חשיפות, עדויות דוקומנטריות וחיפוש בלתי מתפשר אחר האמת.",
+  openGraph: {
+    type: "website",
+    locale: "he_IL",
+    siteName: "תדר-ישר-אל",
+  },
 };
 
 export default function RootLayout({
