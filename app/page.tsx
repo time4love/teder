@@ -20,7 +20,7 @@ export default async function Home(): Promise<JSX.Element> {
 
   return (
     <div className="min-h-screen" dir="rtl">
-      <main className="relative z-10 mx-auto max-w-7xl px-4 pb-24 md:px-8 lg:px-12 xl:px-24">
+      <main className="relative z-20 mx-auto max-w-[1600px] px-4 pb-24 md:px-8 lg:px-12">
         <PlaylistGrid playlists={playlists}>
           <HomeHero />
         </PlaylistGrid>

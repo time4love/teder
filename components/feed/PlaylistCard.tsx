@@ -61,13 +61,13 @@ export function PlaylistCard({
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-3 pb-5 pt-24 sm:px-4 sm:pb-6 sm:pt-28">
-            <h2 className="font-heading text-4xl font-bold leading-[1.1] tracking-tight text-white drop-shadow-md sm:text-4xl md:text-5xl">
+            <h2 className="font-heading text-4xl font-bold leading-[1.1] tracking-tight text-white drop-shadow-md sm:text-4xl md:text-5xl lg:text-5xl 2xl:text-6xl">
               {playlist.title}
             </h2>
           </div>
         </div>
         {playlist.description !== null && playlist.description.trim() !== "" ? (
-          <p className="line-clamp-2 text-sm leading-relaxed text-zinc-600">
+          <p className="line-clamp-2 text-sm leading-relaxed text-zinc-600 md:text-base lg:text-lg">
             {playlist.description.trim()}
           </p>
         ) : null}

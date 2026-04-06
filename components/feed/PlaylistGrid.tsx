@@ -90,7 +90,7 @@ export function PlaylistGrid({
         </motion.div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 md:gap-x-10 md:gap-y-16 2xl:grid-cols-4">
         {playlists.map((p, i) => (
           <PlaylistCard
             key={p.id}
