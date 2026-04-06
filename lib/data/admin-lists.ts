@@ -60,9 +60,6 @@ export async function loadAdminCategoriesAndPlaylists(): Promise<AdminCategoryPl
   const categories = mapCategoryRows(catRes.data);
   const playlists = mapPlaylistRows(plRes.data);
 
-  console.log("Admin Fetched Categories:", categories);
-  console.log("Admin Fetched Playlists:", playlists);
-
   const errors: string[] = [];
   if (catRes.error !== null) {
     errors.push(`קטגוריות: ${catRes.error.message}`);
@@ -135,7 +132,6 @@ export async function loadAdminVideosDashboard(): Promise<{
 
   const categories = mapCategoryRows(catRes.data);
   const playlists = mapPlaylistRows(plRes.data);
-  console.log("Admin Fetched Categories:", categories);
 
   const videos = mapVideoRows(vidRes.data);
   const playlistVideoLinks = mapPlaylistVideoLinkRows(pvRes.data);

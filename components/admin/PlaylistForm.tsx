@@ -70,7 +70,7 @@ export function PlaylistForm({ initialData }: PlaylistFormProps): ReactElement {
         return;
       }
       toast.success("הפלייליסט עודכן");
-      router.refresh();
+      router.push("/admin/playlists");
       return;
     }
 

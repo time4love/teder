@@ -7,20 +7,40 @@ import { mapVideoRow } from "@/lib/mappers/database";
 import type { VideoWithPlaylists } from "@/types/database";
 import { createAdminSupabaseClient } from "@/utils/supabase/service-role";
 
+type SearchParams = Record<string, string | string[] | undefined>;
+
 type PageProps = {
   params: { id: string };
+  searchParams: SearchParams;
 };
+
+const PLAYLIST_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function firstParam(value: string | string[] | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  return Array.isArray(value) ? value[0] : value;
+}
 
 function formListsKey(
   categoryIds: string[],
   playlistIds: string[],
   videoId: string,
+  returnPlaylist: string,
 ): string {
-  return `${videoId}|${categoryIds.join(",")}|${playlistIds.join(",")}`;
+  return `${videoId}|${categoryIds.join(",")}|${playlistIds.join(",")}|${returnPlaylist}`;
 }
 
-export default async function AdminEditVideoPage({ params }: PageProps) {
+export default async function AdminEditVideoPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { id } = params;
+  const rawReturnPl = firstParam(searchParams.playlist_id);
+  const returnToPlaylistEditId =
+    rawReturnPl !== undefined && PLAYLIST_UUID_RE.test(rawReturnPl)
+      ? rawReturnPl
+      : undefined;
 
   const { categories, playlists, errors: listFetchErrors } =
     await loadAdminCategoriesAndPlaylists();
@@ -120,10 +140,12 @@ export default async function AdminEditVideoPage({ params }: PageProps) {
             categories.map((c) => c.id),
             playlists.map((p) => p.id),
             id,
+            returnToPlaylistEditId ?? "",
           )}
           categories={categories}
           playlists={playlists}
           initialData={initialData}
+          returnToPlaylistEditId={returnToPlaylistEditId}
         />
       </div>
     </div>

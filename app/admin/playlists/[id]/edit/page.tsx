@@ -54,7 +54,8 @@ export default async function AdminEditPlaylistPage({
     .from("playlist_videos")
     .select("position, video_id")
     .eq("playlist_id", id)
-    .order("position", { ascending: true });
+    .order("position", { ascending: true })
+    .order("video_id", { ascending: true });
 
   if (pvErr !== null) {
     console.error("[admin/playlists/edit] playlist_videos", pvErr.message);
@@ -191,7 +192,7 @@ export default async function AdminEditPlaylistPage({
                         </TableCell>
                         <TableCell>
                           <Link
-                            href={`/admin/videos/${video.id}/edit`}
+                            href={`/admin/videos/${video.id}/edit?playlist_id=${encodeURIComponent(playlist.id)}`}
                             className={cn(
                               buttonVariants({
                                 variant: "outline",

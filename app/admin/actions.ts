@@ -217,12 +217,15 @@ async function resolveCoverImageInput(
 }
 
 /**
- * Replaces all `playlist_videos` rows for a video with the given playlist order.
+ * Replaces all `playlist_videos` rows for a video.
+ * `playlistPosition` matches `videos.sort_order` from the admin form so the
+ * "סדר הופעה" field and the מיקום column on the playlist edit screen stay aligned.
  */
 async function syncPlaylistVideosForVideo(
   supabase: SupabaseClient,
   videoId: string,
   playlistIds: string[],
+  playlistPosition: number,
 ): Promise<{ error: string } | { success: true }> {
   const { error: delErr } = await supabase
     .from("playlist_videos")
@@ -234,14 +237,16 @@ async function syncPlaylistVideosForVideo(
     return { error: delErr.message };
   }
 
-  if (playlistIds.length === 0) {
+  const uniquePlaylistIds = Array.from(new Set(playlistIds));
+
+  if (uniquePlaylistIds.length === 0) {
     return { success: true };
   }
 
-  const rows = playlistIds.map((playlist_id, position) => ({
+  const rows = uniquePlaylistIds.map((playlist_id) => ({
     playlist_id,
     video_id: videoId,
-    position,
+    position: playlistPosition,
   }));
 
   const { error: insErr } = await supabase.from("playlist_videos").insert(rows);
@@ -564,6 +569,7 @@ export async function addVideoAction(
       supabase,
       inserted.id,
       row.playlist_ids,
+      row.sort_order,
     );
     if ("error" in sync) {
       return { error: sync.error };
@@ -639,7 +645,12 @@ export async function updateVideoAction(
       return { error: error.message };
     }
 
-    const sync = await syncPlaylistVideosForVideo(supabase, id, row.playlist_ids);
+    const sync = await syncPlaylistVideosForVideo(
+      supabase,
+      id,
+      row.playlist_ids,
+      row.sort_order,
+    );
     if ("error" in sync) {
       return { error: sync.error };
     }

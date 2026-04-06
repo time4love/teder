@@ -57,7 +57,8 @@ export default async function PlaylistDossierPage({
     .from("playlist_videos")
     .select("position, videos(*)")
     .eq("playlist_id", id)
-    .order("position", { ascending: true });
+    .order("position", { ascending: true })
+    .order("video_id", { ascending: true });
 
   if (relationsError !== null) {
     console.error("[playlist/[id]] playlist_videos", relationsError.message);

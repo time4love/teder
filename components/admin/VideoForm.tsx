@@ -53,6 +53,11 @@ export interface VideoFormProps {
    * the playlist edit screen).
    */
   defaultPlaylistId?: string | null;
+  /**
+   * In edit mode, after save navigate to this playlist’s admin edit page
+   * (`?playlist_id=` from `/admin/videos/[id]/edit`).
+   */
+  returnToPlaylistEditId?: string | null;
 }
 
 const PLAYLIST_ID_PARAM_RE =
@@ -63,6 +68,7 @@ export function VideoForm({
   playlists,
   initialData,
   defaultPlaylistId,
+  returnToPlaylistEditId,
 }: VideoFormProps) {
   const [isFetchingMeta, setIsFetchingMeta] = useState(false);
   const [localCategories, setLocalCategories] = useState<Category[]>(
@@ -150,7 +156,16 @@ export function VideoForm({
         return;
       }
       toast.success("הסרטון עודכן בהצלחה");
-      router.push("/admin/playlists");
+      if (
+        returnToPlaylistEditId !== undefined &&
+        returnToPlaylistEditId !== null &&
+        returnToPlaylistEditId !== "" &&
+        PLAYLIST_ID_PARAM_RE.test(returnToPlaylistEditId)
+      ) {
+        router.push(`/admin/playlists/${returnToPlaylistEditId}/edit`);
+      } else {
+        router.push("/admin/videos");
+      }
       return;
     }
 
@@ -563,7 +578,8 @@ export function VideoForm({
                   />
                 </FormControl>
                 <FormDescription className="text-zinc-500">
-                  מספר נמוך יותר מופיע קודם בפיד (ברירת מחדל: 0)
+                  קובע את המיקום ברשימת הפלייליסטים ובפיד; מספר נמוך יותר מופיע
+                  קודם (ברירת מחדל: 0)
                 </FormDescription>
                 <FormMessage />
               </FormItem>
