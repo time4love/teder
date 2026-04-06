@@ -1,5 +1,6 @@
 /**
  * Extracts the YouTube video ID from common URL formats (watch, embed, shorts, youtu.be).
+ * @returns The 11-character id when parsable, otherwise `null`.
  */
 export function getYouTubeVideoId(url: string): string | null {
   try {
@@ -28,6 +29,19 @@ export function getYouTubeVideoId(url: string): string | null {
   }
 }
 
+/**
+ * Highest-resolution YouTube poster URL for a watch/embed URL (may 404 for some videos;
+ * clients can fall back to `hqdefault` if needed).
+ */
+export function getYouTubeThumbnail(url: string): string | null {
+  const id = getYouTubeVideoId(url);
+  if (id === null) return null;
+  return `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+}
+
+/**
+ * Builds a `youtube.com/embed/...` URL with query flags for autoplay and branding.
+ */
 export function getYouTubeEmbedSrc(url: string, autoplay: boolean): string | null {
   const id = getYouTubeVideoId(url);
   if (id === null) return null;

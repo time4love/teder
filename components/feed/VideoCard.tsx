@@ -3,41 +3,67 @@
 import { motion } from "framer-motion";
 import { Play } from "lucide-react";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import type { Video } from "@/types/database";
-import { getYouTubeEmbedSrc } from "@/utils/youtube";
+import { cn } from "@/lib/utils";
+import { getYouTubeEmbedSrc, getYouTubeThumbnail } from "@/utils/youtube";
 
 export interface VideoCardProps {
   video: Video;
-  seriesTitle?: string;
-  episodeCount?: number;
+  /** Playlist names (standalone feed only; omitted when inside a playlist strip). */
+  playlistTitles?: string[];
+  /** Hide playlist chips even when `playlistTitles` is set. */
+  hidePlaylistChips?: boolean;
+  /** Full viewport feed vs compact strip inside horizontal playlist row. */
+  variant?: "feed" | "strip";
 }
 
 export function VideoCard({
   video,
-  seriesTitle,
-  episodeCount,
+  playlistTitles,
+  hidePlaylistChips = false,
+  variant = "feed",
 }: VideoCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const bg =
-    video.cover_image_url ??
-    "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1200&q=80";
-  const showEpisodeMeta =
-    episodeCount !== undefined && video.episode_number !== null;
+  const trimmedCover = video.cover_image_url?.trim() ?? "";
+  const imageSrc: string | null =
+    trimmedCover !== ""
+      ? trimmedCover
+      : getYouTubeThumbnail(video.youtube_url);
 
   const embedSrc = getYouTubeEmbedSrc(video.youtube_url, isPlaying);
 
+  const showPlaylists =
+    !hidePlaylistChips &&
+    playlistTitles !== undefined &&
+    playlistTitles.length > 0;
+
+  const isStrip = variant === "strip";
+
   return (
     <section
-      className="relative h-[100dvh] w-full min-w-full shrink-0 snap-start overflow-hidden bg-neutral-950"
+      className={cn(
+        "relative w-full shrink-0 overflow-hidden bg-neutral-950",
+        isStrip
+          ? "h-[min(78dvh,720px)] min-h-[min(78dvh,720px)] rounded-lg border border-zinc-800"
+          : "h-[100dvh] min-w-full snap-start",
+      )}
       aria-label={video.title}
     >
       {!isPlaying && (
         <>
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${bg})` }}
-          />
+          {imageSrc !== null ? (
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${imageSrc})` }}
+            />
+          ) : (
+            <div
+              className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-950 to-black"
+              aria-hidden
+            />
+          )}
           <div
             className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/25 to-black/80"
             aria-hidden
@@ -88,28 +114,45 @@ export function VideoCard({
         </div>
 
         <motion.div
-          className="px-5 pb-10 pt-4"
+          className={cn("px-5 pb-10 pt-4", isStrip && "pb-6 pt-2")}
           initial={{ opacity: 0, y: 28 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ amount: 0.4 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          {seriesTitle !== undefined && seriesTitle !== "" && (
-            <p className="mb-1 text-sm font-medium text-white/75">{seriesTitle}</p>
+          {showPlaylists && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {playlistTitles.map((t, i) => (
+                <Badge
+                  key={`${video.id}-pl-${i}-${t}`}
+                  variant="secondary"
+                  className="border-zinc-600 bg-zinc-800/90 text-xs text-zinc-100"
+                >
+                  {t}
+                </Badge>
+              ))}
+            </div>
           )}
-          <h2 className="text-balance text-2xl font-bold leading-tight text-white">
+          <h2
+            className={cn(
+              "text-balance font-bold leading-tight text-white",
+              isStrip ? "text-lg" : "text-2xl",
+            )}
+          >
             {video.title}
           </h2>
-          {showEpisodeMeta && (
-            <span className="mt-2 inline-block rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white">
-              פרק {video.episode_number} מתוך {episodeCount}
-            </span>
-          )}
-          {video.description !== null && video.description !== "" && (
+          {video.description !== null && video.description !== "" && !isStrip && (
             <p className="mt-3 max-w-prose text-pretty text-sm leading-relaxed text-white/85">
               {video.description}
             </p>
           )}
+          {isStrip &&
+            video.description !== null &&
+            video.description !== "" && (
+              <p className="mt-2 line-clamp-2 text-pretty text-xs leading-relaxed text-white/75">
+                {video.description}
+              </p>
+            )}
         </motion.div>
       </div>
     </section>

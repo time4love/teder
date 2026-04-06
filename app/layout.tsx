@@ -1,13 +1,22 @@
 import type { Metadata } from "next";
-import { Rubik, Geist } from "next/font/google";
+import { Assistant, Frank_Ruhl_Libre } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 import "./globals.css";
+import { Header } from "@/components/layout/Header";
+import { ToasterLoader } from "@/components/providers/toaster-loader";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const rubik = Rubik({
+const assistant = Assistant({
   subsets: ["hebrew", "latin"],
   display: "swap",
+  variable: "--font-sans",
+});
+
+const frankRuhlLibre = Frank_Ruhl_Libre({
+  subsets: ["hebrew", "latin"],
+  weight: ["400", "700"],
+  display: "swap",
+  variable: "--font-heading",
 });
 
 export const metadata: Metadata = {
@@ -21,11 +30,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="he" dir="rtl" className={cn("font-sans", geist.variable)}>
+    <html
+      lang="he"
+      dir="rtl"
+      className={cn(assistant.variable, frankRuhlLibre.variable)}
+      suppressHydrationWarning
+    >
       <body
-        className={`${rubik.className} min-h-[100dvh] overflow-x-hidden bg-black antialiased`}
+        className={cn(
+          assistant.className,
+          "min-h-[100dvh] overflow-x-hidden antialiased bg-[#F9F9F7] text-zinc-900",
+        )}
       >
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <Header />
+          <div className="pt-16">{children}</div>
+          <ToasterLoader />
+        </ThemeProvider>
       </body>
     </html>
   );

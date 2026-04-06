@@ -1,70 +1,37 @@
-import { CategoryPills } from "@/components/feed/CategoryPills";
-import { VideoFeed } from "@/components/feed/VideoFeed";
-import type { Category, Series, Video } from "@/types/database";
+import { PlaylistCard } from "@/components/feed/PlaylistCard";
+import { HomeHero } from "@/components/home/HomeHero";
 import { createClient } from "@/utils/supabase/server";
-import { groupVideosForFeed } from "@/utils/feed";
 
-type SearchParams = Record<string, string | string[] | undefined>;
+import type { Playlist } from "@/types/database";
 
-function firstParam(value: string | string[] | undefined): string | undefined {
-  if (value === undefined) return undefined;
-  return Array.isArray(value) ? value[0] : value;
-}
-
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default async function Home(): Promise<JSX.Element> {
   const supabase = createClient();
 
-  const [{ data: categoriesData, error: categoriesError }, { data: seriesData, error: seriesError }, { data: videosData, error: videosError }] =
-    await Promise.all([
-      supabase.from("categories").select("*").order("sort_order", { ascending: true }),
-      supabase.from("series").select("*"),
-      supabase.from("videos").select("*").order("created_at", { ascending: true }),
-    ]);
+  const { data: rows, error } = await supabase
+    .from("playlists")
+    .select("*")
+    .order("sort_order", { ascending: true });
 
-  if (categoriesError !== null) {
-    console.error("[page] categories", categoriesError.message);
-  }
-  if (seriesError !== null) {
-    console.error("[page] series", seriesError.message);
-  }
-  if (videosError !== null) {
-    console.error("[page] videos", videosError.message);
+  if (error !== null) {
+    console.error("[page] playlists", error.message);
   }
 
-  const categories = (categoriesData ?? []) as Category[];
-  const videosRaw = (videosData ?? []) as Video[];
-  const seriesList = (seriesData ?? []) as Series[];
-
-  const categorySlug = firstParam(searchParams.category);
-
-  let videos: Video[] = videosRaw;
-  if (categorySlug !== undefined && categorySlug !== "") {
-    const match = categories.find((c) => c.slug === categorySlug);
-    if (match !== undefined) {
-      videos = videosRaw.filter((v) => v.category_id === match.id);
-    } else {
-      videos = [];
-    }
-  }
-
-  const rows = groupVideosForFeed(videos);
-
-  const seriesTitles: Record<string, string> = {};
-  for (const s of seriesList) {
-    seriesTitles[s.id] = s.title;
-  }
-
-  const activeSlug =
-    categorySlug !== undefined && categorySlug !== "" ? categorySlug : undefined;
+  const playlists = (rows ?? []) as Playlist[];
 
   return (
-    <div dir="rtl" className="min-h-[100dvh] bg-black text-white">
-      <CategoryPills categories={categories} activeSlug={activeSlug} />
-      <VideoFeed rows={rows} seriesTitles={seriesTitles} />
+    <div className="min-h-screen bg-[#F9F9F7]" dir="rtl">
+      <HomeHero />
+      <main className="relative z-20 mx-auto max-w-7xl px-4 pb-24 md:px-8 lg:px-12 xl:px-24">
+        {playlists.length === 0 ? (
+          <p className="text-zinc-500">לא נמצאו פלייליסטים במערכת.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {playlists.map((p, index) => (
+              <PlaylistCard key={p.id} playlist={p} index={index} />
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 }

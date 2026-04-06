@@ -1,29 +1,48 @@
-import type { FeedRow, Video } from "@/types/database";
+import type { FeedRow, Playlist, Video } from "@/types/database";
+
+export interface PlaylistVideoLink {
+  video_id: string;
+  playlist_id: string;
+  position: number;
+}
 
 /**
- * Groups a flat list of videos into vertical feed rows: standalone slides and
- * consecutive horizontal series blocks (same `series_id`).
+ * Builds feed rows: ordered playlist blocks (horizontal strips), then standalone videos
+ * that are not in any playlist. Videos can appear in multiple playlist blocks.
  */
-export function groupVideosForFeed(videos: Video[]): FeedRow[] {
+export function buildFeedRows(
+  filteredVideos: Video[],
+  playlists: Playlist[],
+  links: PlaylistVideoLink[],
+): FeedRow[] {
+  const videoById = new Map(filteredVideos.map((v) => [v.id, v]));
+  const filteredIds = new Set(filteredVideos.map((v) => v.id));
+
+  const sortedPlaylists = [...playlists].sort((a, b) => {
+    if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+    return a.title.localeCompare(b.title, "he");
+  });
+
   const rows: FeedRow[] = [];
-  let i = 0;
-  while (i < videos.length) {
-    const v = videos[i];
-    if (v.series_id === null) {
-      rows.push({ kind: "standalone", video: v });
-      i += 1;
-      continue;
+
+  for (const pl of sortedPlaylists) {
+    const vids = links
+      .filter((l) => l.playlist_id === pl.id && filteredIds.has(l.video_id))
+      .sort((a, b) => a.position - b.position)
+      .map((l) => videoById.get(l.video_id))
+      .filter((v): v is Video => v !== undefined);
+
+    if (vids.length > 0) {
+      rows.push({ kind: "playlist_block", playlist: pl, videos: vids });
     }
-    const seriesId = v.series_id;
-    const episodes: Video[] = [];
-    while (i < videos.length && videos[i].series_id === seriesId) {
-      episodes.push(videos[i]);
-      i += 1;
-    }
-    episodes.sort(
-      (a, b) => (a.episode_number ?? 0) - (b.episode_number ?? 0),
-    );
-    rows.push({ kind: "series", seriesId, episodes });
   }
+
+  const inAnyPlaylist = new Set(links.map((l) => l.video_id));
+  for (const v of filteredVideos) {
+    if (!inAnyPlaylist.has(v.id)) {
+      rows.push({ kind: "standalone", video: v });
+    }
+  }
+
   return rows;
 }
