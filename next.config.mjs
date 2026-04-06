@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["sonner"],
+  transpilePackages: ["sonner", "tailwind-merge"],
   // Avoid broken webpack vendor chunks for Supabase on the server (runtime
   // "Cannot find module './vendor-chunks/@supabase.js'").
   experimental: {

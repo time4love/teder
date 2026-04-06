@@ -1,4 +1,4 @@
-import { PlaylistCard } from "@/components/feed/PlaylistCard";
+import { PlaylistGrid } from "@/components/feed/PlaylistGrid";
 import { HomeHero } from "@/components/home/HomeHero";
 import { createClient } from "@/utils/supabase/server";
 
@@ -19,18 +19,16 @@ export default async function Home(): Promise<JSX.Element> {
   const playlists = (rows ?? []) as Playlist[];
 
   return (
-    <div className="min-h-screen bg-[#F9F9F7]" dir="rtl">
-      <HomeHero />
-      <main className="relative z-20 mx-auto max-w-7xl px-4 pb-24 md:px-8 lg:px-12 xl:px-24">
+    <div className="min-h-screen" dir="rtl">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 pb-24 md:px-8 lg:px-12 xl:px-24">
+        <PlaylistGrid playlists={playlists}>
+          <HomeHero />
+        </PlaylistGrid>
         {playlists.length === 0 ? (
-          <p className="text-zinc-500">לא נמצאו פלייליסטים במערכת.</p>
-        ) : (
-          <div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {playlists.map((p, index) => (
-              <PlaylistCard key={p.id} playlist={p} index={index} />
-            ))}
-          </div>
-        )}
+          <p className="mt-8 text-center text-zinc-500">
+            לא נמצאו פלייליסטים במערכת.
+          </p>
+        ) : null}
       </main>
     </div>
   );

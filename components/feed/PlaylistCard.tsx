@@ -12,6 +12,7 @@ export interface PlaylistCardProps {
     "id" | "title" | "description" | "cover_image_url"
   >;
   index: number;
+  onFocus?: () => void;
 }
 
 const DEFAULT_DESCRIPTION = "צפו באוסף הסרטונים המלא";
@@ -19,7 +20,11 @@ const DEFAULT_DESCRIPTION = "צפו באוסף הסרטונים המלא";
 /**
  * Editorial portrait card linking to the playlist dossier page.
  */
-export function PlaylistCard({ playlist, index }: PlaylistCardProps): ReactElement {
+export function PlaylistCard({
+  playlist,
+  index,
+  onFocus,
+}: PlaylistCardProps): ReactElement {
   const cover = playlist.cover_image_url?.trim();
   const src =
     cover !== undefined && cover !== "" ? cover : "/placeholder.jpg";
@@ -32,7 +37,13 @@ export function PlaylistCard({ playlist, index }: PlaylistCardProps): ReactEleme
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-50px" }}
+        viewport={{
+          once: true,
+          amount: 0.5,
+          margin: "0px 0px -20% 0px",
+        }}
+        onMouseEnter={() => onFocus?.()}
+        onViewportEnter={() => onFocus?.()}
         whileHover={{
           y: -8,
           transition: { duration: 0.4, ease: "easeOut", delay: 0 },

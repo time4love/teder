@@ -6,6 +6,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 
 /**
  * Scroll-linked parallax hero: logo floats above the page and fades as the user scrolls down.
+ * Ambient color behind the page is driven by {@link PlaylistGrid} using the same logo asset blurred.
  */
 export function HomeHero(): ReactElement {
   const { scrollY } = useScroll();
@@ -15,22 +16,18 @@ export function HomeHero(): ReactElement {
   const scale = useTransform(scrollY, [0, 400], [1, 0.9], { clamp: true });
 
   return (
-    <div className="relative flex min-h-[50vh] w-full flex-col items-center justify-center overflow-hidden pt-12 md:pt-14">
-      <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center">
-        <div className="h-[250px] w-[300px] rounded-[100%] bg-amber-200/40 blur-[80px] sm:h-[400px] sm:w-[600px]" />
-        <div className="absolute left-1/2 top-1/2 h-[300px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-[100%] bg-yellow-500/10 blur-[100px] sm:h-[500px] sm:w-[800px]" />
-      </div>
+    <div className="relative z-20 flex min-h-[50vh] w-full flex-col items-center justify-center overflow-hidden pt-12 md:pt-14">
       <motion.div
         style={{ opacity, y, scale }}
         className="relative z-10 flex flex-col items-center gap-0 text-center"
       >
-        <div className="relative z-10 w-full max-w-[320px] sm:max-w-[450px] md:max-w-[600px] lg:max-w-[800px]">
+        <div className="relative z-10 flex w-full max-w-[85vw] justify-center sm:max-w-[500px] md:max-w-[700px] lg:max-w-[900px]">
           <Image
             src="/logo.png"
             alt="תדר-ישר-אל"
             width={1500}
             height={400}
-            className="h-auto w-full object-contain"
+            className="h-auto w-full object-contain drop-shadow-lg"
             priority
           />
         </div>
