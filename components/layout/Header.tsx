@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 
 const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/about", label: "אודות" },
-  { href: "/time-to-love", label: "עת לאהוב" },
 ];
 
 /**
@@ -54,12 +53,6 @@ export function Header(): JSX.Element {
           className="hidden items-center gap-8 text-sm font-medium tracking-tight text-zinc-700 lg:flex"
           aria-label="עמודים"
         >
-          <Link
-            href="/admin/playlists"
-            className="text-zinc-500 transition hover:text-zinc-900"
-          >
-            ניהול
-          </Link>
           {NAV_LINKS.map((item) => (
             <Link
               key={item.href}
@@ -110,13 +103,6 @@ export function Header(): JSX.Element {
               </button>
             </div>
             <nav className="flex flex-col gap-1 p-4" aria-label="עמודים">
-              <Link
-                href="/admin/playlists"
-                onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-3 text-base font-medium tracking-tight text-zinc-800 transition hover:bg-zinc-100"
-              >
-                ניהול
-              </Link>
               {NAV_LINKS.map((item) => (
                 <Link
                   key={item.href}

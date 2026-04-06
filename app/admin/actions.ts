@@ -2,6 +2,7 @@
 
 import { type SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import {
   adminPlaylistFormSchema,
   parsePlaylistFormForDb,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/validations/admin-video";
 import { randomBytes } from "crypto";
 
+import { createClient as createSupabaseServerClient } from "@/utils/supabase/server";
 import { createServiceRoleClient } from "@/utils/supabase/service-role";
 import { getYouTubeVideoId } from "@/utils/youtube";
 
@@ -168,6 +170,27 @@ export async function fetchYouTubeMetadata(
 function getString(formData: FormData, key: string): string {
   const v = formData.get(key);
   return typeof v === "string" ? v : "";
+}
+
+/**
+ * Email/password sign-in for admin routes (session cookies via Supabase SSR).
+ */
+export async function loginAdminAction(
+  formData: FormData,
+): Promise<{ error: string } | void> {
+  const email = getString(formData, "email").trim();
+  const password = getString(formData, "password");
+  if (email === "" || password === "") {
+    return { error: "נא למלא אימייל וסיסמה" };
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error !== null) {
+    return { error: error.message };
+  }
+
+  redirect("/admin/playlists");
 }
 
 function getStringArray(formData: FormData, key: string): string[] {
