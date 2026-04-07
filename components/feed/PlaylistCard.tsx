@@ -70,7 +70,7 @@ export function PlaylistCard({
               {playlist.title}
             </h2>
             {subtitle !== null ? (
-              <h3 className="mt-2 text-base font-medium leading-snug text-white/90 drop-shadow-md sm:text-lg">
+              <h3 className="mt-2 text-lg font-medium leading-snug text-white/90 drop-shadow-md sm:text-xl md:text-2xl">
                 {subtitle}
               </h3>
             ) : null}

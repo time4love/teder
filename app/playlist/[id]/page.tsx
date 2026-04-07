@@ -168,7 +168,7 @@ export default async function PlaylistDossierPage({
               {pl.title}
             </h1>
             {hasSubtitle ? (
-              <h2 className="text-xl font-medium text-zinc-200 drop-shadow-sm md:text-2xl">
+              <h2 className="text-2xl font-medium text-zinc-200 drop-shadow-sm md:text-3xl">
                 {subtitleTrimmed}
               </h2>
             ) : null}
