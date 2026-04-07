@@ -12,3 +12,16 @@ const defaultUrl =
     : "http://localhost:3000");
 
 export const SITE_ORIGIN: string = String(defaultUrl).replace(/\/$/, "");
+
+/**
+ * Fully qualified image URL for Open Graph / Twitter cards (scrapers require absolute URLs).
+ */
+export function absoluteOgImageUrl(href: string | null | undefined): string {
+  const raw = typeof href === "string" ? href.trim() : "";
+  const path = raw !== "" ? raw : "/logo.png";
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${SITE_ORIGIN}${normalized}`;
+}

@@ -9,7 +9,7 @@ import type { Playlist } from "@/types/database";
 export interface PlaylistCardProps {
   playlist: Pick<
     Playlist,
-    "id" | "title" | "subtitle" | "description" | "cover_image_url"
+    "id" | "title" | "subtitle" | "cover_image_url"
   >;
   index: number;
   onFocus?: () => void;
@@ -56,7 +56,7 @@ export function PlaylistCard({
           delay: index * 0.1,
           ease: [0.21, 0.47, 0.32, 0.98],
         }}
-        className="flex flex-col gap-4"
+        className="flex flex-col"
       >
         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-md bg-zinc-200 shadow-sm transition-shadow duration-500 group-hover:shadow-xl">
           {/* eslint-disable-next-line @next/next/no-img-element -- editorial URLs may be external */}
@@ -76,12 +76,6 @@ export function PlaylistCard({
             ) : null}
           </div>
         </div>
-
-        {playlist.description !== null && playlist.description.trim() !== "" ? (
-          <p className="text-start line-clamp-2 text-sm leading-relaxed text-zinc-500 md:text-base lg:text-lg">
-            {playlist.description.trim()}
-          </p>
-        ) : null}
       </motion.div>
     </Link>
   );

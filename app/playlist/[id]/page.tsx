@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { PlaylistVideoItem } from "@/components/feed/PlaylistVideoItem";
 import { PageContextBar } from "@/components/layout/PageContextBar";
 import { ShareButton } from "@/components/shared/ShareButton";
-import { SITE_ORIGIN } from "@/lib/site";
+import { SITE_ORIGIN, absoluteOgImageUrl } from "@/lib/site";
 import { createClient } from "@/utils/supabase/server";
 
 import type { Playlist, Video } from "@/types/database";
@@ -15,8 +15,7 @@ type PlaylistVideoRelationRow = {
   videos: Video | Video[] | null;
 };
 
-const DEFAULT_DESCRIPTION =
-  "ארכיון חשיפות, עדויות ומידע.";
+const OG_PLAYLIST_FALLBACK = "צפו בפלייליסט המלא בתדר-ישר-אל.";
 
 function normalizeVideos(rows: PlaylistVideoRelationRow[] | null): Video[] {
   if (rows === null) return [];
@@ -43,44 +42,58 @@ export async function generateMetadata({
   const supabase = createClient();
   const { data: playlist, error } = await supabase
     .from("playlists")
-    .select("title, description, cover_image_url")
+    .select("title, subtitle, description, cover_image_url")
     .eq("id", params.id)
     .maybeSingle();
 
   if (error !== null || playlist === null) {
-    return { title: "פלייליסט" };
+    return {};
   }
 
   const p = playlist as Pick<
     Playlist,
-    "title" | "description" | "cover_image_url"
+    "title" | "subtitle" | "description" | "cover_image_url"
   >;
-  const description =
+  const title = p.title;
+  const sub =
+    typeof p.subtitle === "string" && p.subtitle.trim() !== ""
+      ? p.subtitle.trim()
+      : "";
+  const desc =
     p.description !== null && p.description.trim() !== ""
       ? p.description.trim()
-      : DEFAULT_DESCRIPTION;
+      : "";
+  const description =
+    sub !== "" ? sub : desc !== "" ? desc : OG_PLAYLIST_FALLBACK;
+
   const cover = p.cover_image_url?.trim();
-  const images =
-    cover !== undefined && cover !== ""
-      ? [{ url: cover, alt: p.title }]
-      : [{ url: "/logo.png", alt: p.title }];
+  const imageUrl = absoluteOgImageUrl(
+    cover !== undefined && cover !== "" ? cover : "/logo.png",
+  );
 
   return {
-    title: p.title,
+    title,
     description,
     openGraph: {
-      title: p.title,
+      title,
       description,
       type: "website",
       locale: "he_IL",
       siteName: "תדר-ישר-אל",
-      images,
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
-      title: p.title,
+      title,
       description,
-      images: images.map((i) => i.url),
+      images: [imageUrl],
     },
   };
 }
@@ -123,11 +136,6 @@ export default async function PlaylistDossierPage({
 
   const videos = normalizeVideos(relations as PlaylistVideoRelationRow[] | null);
 
-  const shareText =
-    pl.description !== null && pl.description.trim() !== ""
-      ? pl.description.trim()
-      : DEFAULT_DESCRIPTION;
-
   const subtitleTrimmed =
     typeof pl.subtitle === "string" ? pl.subtitle.trim() : "";
   const hasSubtitle = subtitleTrimmed !== "";
@@ -140,6 +148,11 @@ export default async function PlaylistDossierPage({
     pl.description !== null && pl.description.trim() !== ""
       ? pl.description.trim()
       : "";
+
+  const shareTitle = pl.title;
+  const shareText = `${pl.title}${
+    hasSubtitle ? ` - ${subtitleTrimmed}` : ""
+  }${descriptionTrimmed !== "" ? `\n${descriptionTrimmed}` : ""}`.trim();
 
   return (
     <div className="min-h-screen bg-[#F9F9F7] text-zinc-900" dir="rtl">
@@ -181,7 +194,7 @@ export default async function PlaylistDossierPage({
 
           <div className="shrink-0 md:mb-2">
             <ShareButton
-              title={pl.title}
+              title={shareTitle}
               text={shareText}
               url={`${SITE_ORIGIN}/playlist/${pl.id}`}
               appearance="onDark"

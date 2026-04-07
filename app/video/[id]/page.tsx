@@ -2,15 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { VideoFocusRoom } from "@/components/video/VideoFocusRoom";
-import { SITE_ORIGIN } from "@/lib/site";
+import { SITE_ORIGIN, absoluteOgImageUrl } from "@/lib/site";
 import { createClient } from "@/utils/supabase/server";
 
 import type { Video } from "@/types/database";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-const DEFAULT_DESCRIPTION =
-  "ארכיון חשיפות, עדויות ומידע.";
+const OG_VIDEO_FALLBACK = "צפו בסרטון המלא בתדר-ישר-אל.";
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   if (value === undefined) return undefined;
@@ -30,39 +29,48 @@ export async function generateMetadata({
     .maybeSingle();
 
   if (error !== null || video === null) {
-    return { title: "סרטון" };
+    return {};
   }
 
   const v = video as Pick<
     Video,
     "title" | "description" | "cover_image_url"
   >;
-  const description =
+  const title = v.title;
+  const body =
     v.description !== null && v.description.trim() !== ""
       ? v.description.trim()
-      : DEFAULT_DESCRIPTION;
+      : "";
+  const description = body !== "" ? body : OG_VIDEO_FALLBACK;
+
   const cover = v.cover_image_url?.trim();
-  const images =
-    cover !== undefined && cover !== ""
-      ? [{ url: cover, alt: v.title }]
-      : [{ url: "/logo.png", alt: v.title }];
+  const imageUrl = absoluteOgImageUrl(
+    cover !== undefined && cover !== "" ? cover : "/logo.png",
+  );
 
   return {
-    title: v.title,
+    title,
     description,
     openGraph: {
-      title: v.title,
+      title,
       description,
       type: "website",
       locale: "he_IL",
       siteName: "תדר-ישר-אל",
-      images,
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
-      title: v.title,
+      title,
       description,
-      images: images.map((i) => i.url),
+      images: [imageUrl],
     },
   };
 }
@@ -115,10 +123,13 @@ export default async function VideoPage({
   }
 
   const shareUrl = `${SITE_ORIGIN}/video/${row.id}`;
-  const shareText =
+  const descTrim =
     row.description !== null && row.description.trim() !== ""
       ? row.description.trim()
-      : DEFAULT_DESCRIPTION;
+      : "";
+  const shareText = `${row.title}${
+    descTrim !== "" ? `\n${descTrim}` : ""
+  }`.trim();
 
   return (
     <VideoFocusRoom
