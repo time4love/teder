@@ -16,7 +16,7 @@ type PlaylistVideoRelationRow = {
 };
 
 const DEFAULT_DESCRIPTION =
-  "ארכיון חשיפות, עדויות דוקומנטריות וחיפוש בלתי מתפשר אחר האמת.";
+  "ארכיון חשיפות, עדויות ומידע.";
 
 function normalizeVideos(rows: PlaylistVideoRelationRow[] | null): Video[] {
   if (rows === null) return [];

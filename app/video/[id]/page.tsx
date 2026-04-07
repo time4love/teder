@@ -10,7 +10,7 @@ import type { Video } from "@/types/database";
 type SearchParams = Record<string, string | string[] | undefined>;
 
 const DEFAULT_DESCRIPTION =
-  "ארכיון חשיפות, עדויות דוקומנטריות וחיפוש בלתי מתפשר אחר האמת.";
+  "ארכיון חשיפות, עדויות ומידע.";
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   if (value === undefined) return undefined;

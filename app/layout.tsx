@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     default: "תדר-ישר-אל | עדויות וחשיפות אמת",
   },
   description:
-    "ארכיון חשיפות, עדויות דוקומנטריות וחיפוש בלתי מתפשר אחר האמת.",
+    "ארכיון חשיפות, עדויות ומידע.",
   openGraph: {
     type: "website",
     locale: "he_IL",
