@@ -7,11 +7,15 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
+export type ShareButtonAppearance = "default" | "onDark";
+
 export interface ShareButtonProps {
   title: string;
   text: string;
   url?: string;
   className?: string;
+  /** High-contrast outline for use on cinematic / dark hero backgrounds. */
+  appearance?: ShareButtonAppearance;
 }
 
 export function ShareButton({
@@ -19,6 +23,7 @@ export function ShareButton({
   text,
   url,
   className,
+  appearance = "default",
 }: ShareButtonProps): ReactElement {
   const handleShare = async (): Promise<void> => {
     const shareUrl =
@@ -50,7 +55,12 @@ export function ShareButton({
       type="button"
       variant="outline"
       size="sm"
-      className={cn("gap-2 rounded-full", className)}
+      className={cn(
+        "gap-2 rounded-full",
+        appearance === "onDark" &&
+          "border-white/25 bg-black/45 text-white shadow-none backdrop-blur-md hover:border-white/40 hover:bg-white/15 hover:text-white",
+        className,
+      )}
       onClick={() => void handleShare()}
     >
       <Share2 className="size-4" aria-hidden />

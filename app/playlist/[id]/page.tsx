@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { PlaylistVideoItem } from "@/components/feed/PlaylistVideoItem";
@@ -131,42 +132,65 @@ export default async function PlaylistDossierPage({
     typeof pl.subtitle === "string" ? pl.subtitle.trim() : "";
   const hasSubtitle = subtitleTrimmed !== "";
 
+  const coverTrimmed = pl.cover_image_url?.trim();
+  const hasCover =
+    coverTrimmed !== undefined && coverTrimmed !== "";
+
+  const descriptionTrimmed =
+    pl.description !== null && pl.description.trim() !== ""
+      ? pl.description.trim()
+      : "";
+
   return (
     <div className="min-h-screen bg-[#F9F9F7] text-zinc-900" dir="rtl">
       <PageContextBar backHref="/" backText="חזרה לראשי" />
-      <main className="mx-auto min-h-screen max-w-5xl px-4 py-12 md:px-8 lg:px-12">
-        <header className="mb-16 border-b border-zinc-200 pb-12">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
-            <div className="min-w-0 flex-1">
-              <h1
-                className={
-                  hasSubtitle
-                    ? "mb-2 font-heading text-4xl font-bold text-zinc-900 md:text-6xl"
-                    : "mb-6 font-heading text-4xl font-bold text-zinc-900 md:text-6xl"
-                }
-              >
-                {pl.title}
-              </h1>
-              {hasSubtitle ? (
-                <h2 className="mb-4 text-xl font-medium text-zinc-800 md:text-2xl">
-                  {subtitleTrimmed}
-                </h2>
-              ) : null}
-              {pl.description !== null && pl.description.trim() !== "" ? (
-                <p className="max-w-3xl text-lg leading-relaxed text-zinc-600 md:text-xl">
-                  {pl.description}
-                </p>
-              ) : null}
-            </div>
+
+      <section className="relative flex h-[40vh] min-h-[350px] w-full items-end pb-12 md:h-[50vh]">
+        {hasCover ? (
+          <div className="absolute inset-0 z-0">
+            <Image
+              src={coverTrimmed}
+              alt={pl.title}
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/60 to-black/10" />
+          </div>
+        ) : (
+          <div className="absolute inset-0 z-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-950" />
+        )}
+
+        <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col justify-end gap-6 px-4 md:flex-row md:items-end md:justify-between md:px-8 lg:px-12">
+          <div className="flex max-w-3xl flex-col gap-3">
+            <h1 className="font-heading text-4xl font-bold tracking-tight text-white drop-shadow-md md:text-6xl">
+              {pl.title}
+            </h1>
+            {hasSubtitle ? (
+              <h2 className="text-xl font-medium text-zinc-200 drop-shadow-sm md:text-2xl">
+                {subtitleTrimmed}
+              </h2>
+            ) : null}
+            {descriptionTrimmed !== "" ? (
+              <p className="mt-2 max-w-2xl text-base leading-relaxed text-zinc-300 line-clamp-3 md:text-lg">
+                {descriptionTrimmed}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="shrink-0 md:mb-2">
             <ShareButton
               title={pl.title}
               text={shareText}
               url={`${SITE_ORIGIN}/playlist/${pl.id}`}
-              className="shrink-0 self-start"
+              appearance="onDark"
             />
           </div>
-        </header>
+        </div>
+      </section>
 
+      <main className="mx-auto max-w-5xl px-4 py-12 md:px-8 lg:px-12">
         {videos.length === 0 ? (
           <p className="text-center text-zinc-500">
             אין סרטונים בפלייליסט זה עדיין.
