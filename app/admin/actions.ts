@@ -351,6 +351,7 @@ export async function createCategoryAction(
 export type CreatedPlaylist = {
   id: string;
   title: string;
+  subtitle: string | null;
   description: string | null;
   cover_image_url: string | null;
   sort_order: number;
@@ -378,6 +379,7 @@ export async function createPlaylistAction(
 
   const raw = {
     title: getString(formData, "title"),
+    subtitle: getString(formData, "subtitle"),
     description: getString(formData, "description"),
     cover_image_url: resolvedCover.cover_image_url,
     sort_order: getString(formData, "sort_order"),
@@ -404,11 +406,12 @@ export async function createPlaylistAction(
       .from("playlists")
       .insert({
         title: row.title,
+        subtitle: row.subtitle,
         description: row.description,
         cover_image_url: row.cover_image_url,
         sort_order: row.sort_order,
       })
-      .select("id, title, description, cover_image_url, sort_order")
+      .select("id, title, subtitle, description, cover_image_url, sort_order")
       .single();
 
     if (error !== null) {
@@ -425,6 +428,10 @@ export async function createPlaylistAction(
     return {
       id: data.id,
       title: data.title,
+      subtitle:
+        typeof data.subtitle === "string" && data.subtitle.trim() !== ""
+          ? data.subtitle.trim()
+          : null,
       description: data.description,
       cover_image_url:
         typeof data.cover_image_url === "string" ? data.cover_image_url : null,
@@ -455,6 +462,7 @@ export async function updatePlaylistAction(
 
   const raw = {
     title: getString(formData, "title"),
+    subtitle: getString(formData, "subtitle"),
     description: getString(formData, "description"),
     cover_image_url: resolvedCover.cover_image_url,
     sort_order: getString(formData, "sort_order"),
@@ -481,6 +489,7 @@ export async function updatePlaylistAction(
       .from("playlists")
       .update({
         title: row.title,
+        subtitle: row.subtitle,
         description: row.description,
         cover_image_url: row.cover_image_url,
         sort_order: row.sort_order,

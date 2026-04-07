@@ -3,6 +3,7 @@ import { z } from "zod";
 /** Used by {@link PlaylistForm} (react-hook-form) and server actions after normalizing `sort_order` to a number. */
 export const adminPlaylistFormSchema = z.object({
   title: z.string().min(1, "כותרת חובה").max(200, "כותרת ארוכה מדי"),
+  subtitle: z.string().max(300, "כותרת משנה ארוכה מדי").optional(),
   description: z.string().optional(),
   cover_image_url: z.string().optional(),
   sort_order: z.number().int(),
@@ -15,11 +16,17 @@ export function parsePlaylistFormForDb(
 ):
   | {
       title: string;
+      subtitle: string | null;
       description: string | null;
       cover_image_url: string | null;
       sort_order: number;
     }
   | { error: string } {
+  const subtitle =
+    data.subtitle !== undefined && data.subtitle.trim() !== ""
+      ? data.subtitle.trim()
+      : null;
+
   const description =
     data.description !== undefined && data.description.trim() !== ""
       ? data.description.trim()
@@ -37,6 +44,7 @@ export function parsePlaylistFormForDb(
 
   return {
     title: data.title.trim(),
+    subtitle,
     description,
     cover_image_url,
     sort_order: data.sort_order,

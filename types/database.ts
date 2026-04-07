@@ -8,6 +8,7 @@ export interface Category {
 export interface Playlist {
   id: string;
   title: string;
+  subtitle?: string | null;
   description: string | null;
   sort_order: number;
   cover_image_url?: string | null;

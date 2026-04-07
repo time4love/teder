@@ -254,6 +254,7 @@ export function VideoForm({
     try {
       const fd = new FormData();
       fd.append("title", title);
+      fd.append("subtitle", "");
       fd.append("description", "");
       fd.append("cover_image_url", "");
       fd.append("sort_order", "0");
@@ -265,6 +266,7 @@ export function VideoForm({
       const pl: Playlist = {
         id: result.id,
         title: result.title,
+        subtitle: result.subtitle,
         description: result.description,
         sort_order: result.sort_order,
         cover_image_url: result.cover_image_url,

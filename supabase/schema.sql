@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
 CREATE TABLE IF NOT EXISTS public.playlists (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
+  subtitle TEXT,
   description TEXT,
   cover_image_url TEXT,
   sort_order INTEGER NOT NULL DEFAULT 0
@@ -84,3 +85,6 @@ ALTER TABLE public.playlists
 
 ALTER TABLE public.playlists
   ADD COLUMN IF NOT EXISTS cover_image_url TEXT;
+
+ALTER TABLE public.playlists
+  ADD COLUMN IF NOT EXISTS subtitle TEXT;

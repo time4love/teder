@@ -32,9 +32,12 @@ export function mapPlaylistRow(row: unknown): Playlist | null {
   const id = row.id;
   const title = row.title;
   if (typeof id !== "string" || typeof title !== "string") return null;
+  const sub = row.subtitle;
   return {
     id,
     title,
+    subtitle:
+      typeof sub === "string" && sub.trim() !== "" ? sub.trim() : null,
     description: typeof row.description === "string" ? row.description : null,
     sort_order: typeof row.sort_order === "number" ? row.sort_order : 0,
     cover_image_url:

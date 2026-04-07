@@ -127,6 +127,10 @@ export default async function PlaylistDossierPage({
       ? pl.description.trim()
       : DEFAULT_DESCRIPTION;
 
+  const subtitleTrimmed =
+    typeof pl.subtitle === "string" ? pl.subtitle.trim() : "";
+  const hasSubtitle = subtitleTrimmed !== "";
+
   return (
     <div className="min-h-screen bg-[#F9F9F7] text-zinc-900" dir="rtl">
       <PageContextBar backHref="/" backText="חזרה לראשי" />
@@ -134,9 +138,20 @@ export default async function PlaylistDossierPage({
         <header className="mb-16 border-b border-zinc-200 pb-12">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
             <div className="min-w-0 flex-1">
-              <h1 className="mb-6 font-heading text-4xl font-bold text-zinc-900 md:text-6xl">
+              <h1
+                className={
+                  hasSubtitle
+                    ? "mb-2 font-heading text-4xl font-bold text-zinc-900 md:text-6xl"
+                    : "mb-6 font-heading text-4xl font-bold text-zinc-900 md:text-6xl"
+                }
+              >
                 {pl.title}
               </h1>
+              {hasSubtitle ? (
+                <h2 className="mb-4 text-xl font-medium text-zinc-800 md:text-2xl">
+                  {subtitleTrimmed}
+                </h2>
+              ) : null}
               {pl.description !== null && pl.description.trim() !== "" ? (
                 <p className="max-w-3xl text-lg leading-relaxed text-zinc-600 md:text-xl">
                   {pl.description}

@@ -41,6 +41,7 @@ export function PlaylistForm({ initialData }: PlaylistFormProps): ReactElement {
   const defaultValues = useMemo<AdminPlaylistFormValues>(
     () => ({
       title: initialData?.title ?? "",
+      subtitle: initialData?.subtitle ?? "",
       description: initialData?.description ?? "",
       cover_image_url: initialData?.cover_image_url ?? "",
       sort_order: initialData?.sort_order ?? 0,
@@ -56,6 +57,7 @@ export function PlaylistForm({ initialData }: PlaylistFormProps): ReactElement {
   async function onSubmit(values: AdminPlaylistFormValues): Promise<void> {
     const fd = new FormData();
     fd.append("title", values.title);
+    fd.append("subtitle", values.subtitle ?? "");
     fd.append("description", values.description ?? "");
     if (coverFile !== null) {
       fd.append("cover_image_file", coverFile);
@@ -100,6 +102,26 @@ export function PlaylistForm({ initialData }: PlaylistFormProps): ReactElement {
                 <FormControl>
                   <Input
                     placeholder="שם הפלייליסט / הנושא"
+                    className="border-zinc-200 bg-white text-zinc-900 placeholder:text-zinc-400"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="subtitle"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-zinc-900">
+                  כותרת משנה (אופציונלי)
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="שורה קצרה מתחת לכותרת"
                     className="border-zinc-200 bg-white text-zinc-900 placeholder:text-zinc-400"
                     {...field}
                   />
