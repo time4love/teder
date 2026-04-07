@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { ToasterLoader } from "@/components/providers/toaster-loader";
+import { SITE_ORIGIN } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 const assistant = Assistant({
@@ -20,10 +21,10 @@ const frankRuhlLibre = Frank_Ruhl_Libre({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tederyesharel.co.il"),
+  metadataBase: new URL(SITE_ORIGIN),
   title: {
     template: "%s | תדר-ישר-אל",
-    default: "תדר-ישר-אל | ארכיון דוקומנטרי",
+    default: "תדר-ישר-אל | עדויות וחשיפות אמת",
   },
   description:
     "ארכיון חשיפות, עדויות דוקומנטריות וחיפוש בלתי מתפשר אחר האמת.",
@@ -31,6 +32,17 @@ export const metadata: Metadata = {
     type: "website",
     locale: "he_IL",
     siteName: "תדר-ישר-אל",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "תדר-ישר-אל - לוגו",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
   },
 };
 
