@@ -32,14 +32,6 @@ export const metadata: Metadata = {
     type: "website",
     locale: "he_IL",
     siteName: "תדר-ישר-אל",
-    images: [
-      {
-        url: "/logo.png",
-        width: 1200,
-        height: 630,
-        alt: "תדר-ישר-אל - לוגו",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
