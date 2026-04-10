@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { createPlaylistAction, updatePlaylistAction } from "@/app/admin/actions";
+import { isServerActionError } from "@/lib/server-action-result";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -67,8 +68,12 @@ export function PlaylistForm({ initialData }: PlaylistFormProps): ReactElement {
 
     if (isEdit && initialData !== undefined) {
       const result = await updatePlaylistAction(initialData.id, fd);
-      if ("error" in result) {
+      if (isServerActionError(result)) {
         toast.error(result.error);
+        return;
+      }
+      if (result == null) {
+        toast.error("שגיאה לא צפויה");
         return;
       }
       toast.success("הפלייליסט עודכן");
@@ -77,8 +82,12 @@ export function PlaylistForm({ initialData }: PlaylistFormProps): ReactElement {
     }
 
     const result = await createPlaylistAction(fd);
-    if ("error" in result) {
+    if (isServerActionError(result)) {
       toast.error(result.error);
+      return;
+    }
+    if (result == null) {
+      toast.error("שגיאה לא צפויה");
       return;
     }
     toast.success("הפלייליסט נוצר");

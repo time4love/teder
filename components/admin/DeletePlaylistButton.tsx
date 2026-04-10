@@ -6,6 +6,7 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 
 import { deletePlaylistAction } from "@/app/admin/actions";
+import { isServerActionError } from "@/lib/server-action-result";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,8 +35,12 @@ export function DeletePlaylistButton({
     startTransition(() => {
       void (async () => {
         const result = await deletePlaylistAction(playlistId);
-        if ("error" in result) {
+        if (isServerActionError(result)) {
           toast.error(result.error);
+          return;
+        }
+        if (result == null) {
+          toast.error("שגיאה לא צפויה");
           return;
         }
         toast.success("הפלייליסט נמחק");

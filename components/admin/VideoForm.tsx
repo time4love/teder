@@ -16,6 +16,7 @@ import {
   updateVideoAction,
 } from "@/app/admin/actions";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { isServerActionError } from "@/lib/server-action-result";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -151,8 +152,12 @@ export function VideoForm({
 
     if (isEditMode && initialData !== undefined) {
       const result = await updateVideoAction(initialData.id, fd);
-      if ("error" in result) {
+      if (isServerActionError(result)) {
         toast.error(result.error);
+        return;
+      }
+      if (result == null) {
+        toast.error("שגיאה לא צפויה");
         return;
       }
       toast.success("הסרטון עודכן בהצלחה");
@@ -170,8 +175,12 @@ export function VideoForm({
     }
 
     const result = await addVideoAction(fd);
-    if ("error" in result) {
+    if (isServerActionError(result)) {
       toast.error(result.error);
+      return;
+    }
+    if (result == null) {
+      toast.error("שגיאה לא צפויה");
       return;
     }
     toast.success("הסרטון נוסף בהצלחה");
@@ -197,8 +206,12 @@ export function VideoForm({
     setIsFetchingMeta(true);
     try {
       const result = await fetchYouTubeMetadata(raw);
-      if ("error" in result) {
+      if (isServerActionError(result)) {
         toast.error(result.error);
+        return;
+      }
+      if (result == null) {
+        toast.error("שגיאה לא צפויה");
         return;
       }
       form.setValue("title", result.title, {
@@ -221,8 +234,12 @@ export function VideoForm({
     setIsCreatingCategory(true);
     try {
       const result = await createCategoryAction(name);
-      if ("error" in result) {
+      if (isServerActionError(result)) {
         toast.error(result.error);
+        return;
+      }
+      if (result == null) {
+        toast.error("שגיאה לא צפויה");
         return;
       }
       const newCat: Category = {
@@ -259,8 +276,12 @@ export function VideoForm({
       fd.append("cover_image_url", "");
       fd.append("sort_order", "0");
       const result = await createPlaylistAction(fd);
-      if ("error" in result) {
+      if (isServerActionError(result)) {
         toast.error(result.error);
+        return;
+      }
+      if (result == null) {
+        toast.error("שגיאה לא צפויה");
         return;
       }
       const pl: Playlist = {

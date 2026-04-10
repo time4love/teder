@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { loginAdminAction } from "@/app/admin/actions";
+import { isServerActionError } from "@/lib/server-action-result";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,7 +39,7 @@ export function LoginForm(): ReactElement {
             setPending(true);
             try {
               const result = await loginAdminAction(formData);
-              if (result !== undefined && result !== null && "error" in result) {
+              if (isServerActionError(result)) {
                 setError(result.error);
               }
             } finally {
