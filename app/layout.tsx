@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Assistant, Frank_Ruhl_Libre } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { ToasterLoader } from "@/components/providers/toaster-loader";
@@ -61,6 +62,7 @@ export default function RootLayout({
           <div className="pt-16">{children}</div>
           <ToasterLoader />
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
