@@ -1,8 +1,7 @@
 /**
  * Builds static `app/opengraph-image.png` + `app/twitter-image.png` (1200×630) for WhatsApp / Facebook.
- * Dynamic `ImageResponse` with a ~1MB base64 logo often times out crawlers; a small PNG is reliable.
- *
- * Run after changing `public/logo.png`: `npm run generate:og`
+ * Not run on Vercel: commit the generated PNGs. `sharp` is optional — install locally only when regenerating:
+ *   npm install sharp --save-dev && npm run generate:og
  */
 import sharp from "sharp";
 import { readFile, writeFile, copyFile } from "node:fs/promises";
