@@ -33,6 +33,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "he_IL",
     siteName: "תדר-ישר-אל",
+    url: SITE_ORIGIN,
   },
   twitter: {
     card: "summary_large_image",
