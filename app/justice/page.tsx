@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
 
-import { ComingSoon } from "@/components/home/ComingSoon";
+import { GateScene } from "@/components/gates/GateScene";
 import { GATES } from "@/lib/gates";
 
 const gate = GATES[0];
 
 export const metadata: Metadata = {
   title: gate.title,
+  description: gate.tagline,
 };
 
 export default function JusticePage(): JSX.Element {
-  return <ComingSoon title={gate.title} tagline={gate.tagline} rgb={gate.rgb} />;
+  return (
+    <main dir="rtl">
+      <GateScene gate={gate} />
+    </main>
+  );
 }

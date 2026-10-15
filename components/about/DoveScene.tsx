@@ -13,6 +13,7 @@ import {
 
 import { BURST_MS, LightBursts, makeBurst } from "@/components/about/LightBurst";
 import type { Burst } from "@/components/about/LightBurst";
+import { BLAZE_FILTER } from "@/components/shared/blaze";
 import { FrequencyWaves } from "@/components/shared/FrequencyWaves";
 import type { Ribbon, WavePalette } from "@/components/shared/FrequencyWaves";
 
@@ -64,10 +65,6 @@ type Mote = (typeof BACK_MOTES)[number];
 
 /** The heading, word by word — each word lights up when touched. */
 const HEADING_WORDS = ["להתחבר", "לתדר", "אמת"] as const;
-
-/** Blazing-light treatment shared by the dove and the words. */
-const BLAZE_FILTER =
-  "drop-shadow(0 0 14px #fff) drop-shadow(0 0 40px rgba(255,236,180,0.95)) drop-shadow(0 0 90px rgba(255,214,140,0.8))";
 
 /** How far each depth layer shifts with the pointer — nearer layers move more. */
 const BACK_PARALLAX_PX = 8;
