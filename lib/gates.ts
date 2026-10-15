@@ -18,7 +18,7 @@ export const GATES: readonly Gate[] = [
   {
     id: "justice",
     title: "דיני צדק",
-    tagline: "משפט, אחריות ותיקון",
+    tagline: "צדק לעם - תיק הקורונה",
     href: "/justice",
     rgb: [233, 178, 76],
   },
