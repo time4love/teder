@@ -162,9 +162,11 @@ export function GateScene({ gate, topics = [] }: GateSceneProps): ReactElement {
       >
         {gate.title}
       </motion.h1>
-      <motion.p {...enter(0.35)} className="mt-3 text-center text-lg text-white/70 md:text-xl">
-        {gate.tagline}
-      </motion.p>
+      {gate.tagline !== undefined ? (
+        <motion.p {...enter(0.35)} className="mt-3 text-center text-lg text-white/70 md:text-xl">
+          {gate.tagline}
+        </motion.p>
+      ) : null}
 
       {/* What the gate will hold */}
       {topics.length > 0 ? (
