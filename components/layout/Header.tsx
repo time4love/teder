@@ -10,7 +10,7 @@ import { FREEDOM_PROTOCOL_HREF, FREEDOM_PROTOCOL_TITLE } from "@/lib/gates";
 import { cn } from "@/lib/utils";
 
 /** Pages with a dark full-screen scene behind the header. */
-const DARK_PAGES: ReadonlySet<string> = new Set(["/", "/about", "/contact"]);
+const DARK_PAGES: ReadonlySet<string> = new Set(["/", "/about", "/contact", "/medicine", "/justice"]);
 
 const NAV_LINKS: { href: string; label: string }[] = [
   { href: FREEDOM_PROTOCOL_HREF, label: FREEDOM_PROTOCOL_TITLE },
