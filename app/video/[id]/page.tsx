@@ -3,17 +3,28 @@ import { notFound } from "next/navigation";
 
 import { VideoFocusRoom } from "@/components/video/VideoFocusRoom";
 import { SITE_ORIGIN, absoluteOgImageUrl } from "@/lib/site";
-import { createClient } from "@/utils/supabase/server";
+import { createPublicClient } from "@/utils/supabase/public";
 
 import type { Video } from "@/types/database";
 
-type SearchParams = Record<string, string | string[] | undefined>;
+type PlaylistMembershipRow = {
+  playlist_id: string;
+  playlists: { title: string } | { title: string }[] | null;
+};
 
 const OG_VIDEO_FALLBACK = "צפו בסרטון המלא בתדר-ישר-אל.";
 
-function firstParam(value: string | string[] | undefined): string | undefined {
-  if (value === undefined) return undefined;
-  return Array.isArray(value) ? value[0] : value;
+/** Served from cache; admin edits refresh it immediately (see `revalidatePublicPages`). */
+export const revalidate = 300;
+
+/** Prebuild every video; ones added later render on first visit and are cached. */
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  const { data, error } = await createPublicClient().from("videos").select("id");
+  if (error !== null) {
+    console.error("[video/[id]] generateStaticParams", error.message);
+    return [];
+  }
+  return (data ?? []).map((row: { id: string }) => ({ id: row.id }));
 }
 
 export async function generateMetadata({
@@ -21,7 +32,7 @@ export async function generateMetadata({
 }: {
   params: { id: string };
 }): Promise<Metadata> {
-  const supabase = createClient();
+  const supabase = createPublicClient();
   const { data: video, error } = await supabase
     .from("videos")
     .select("title, description, cover_image_url")
@@ -77,12 +88,10 @@ export async function generateMetadata({
 
 export default async function VideoPage({
   params,
-  searchParams,
 }: {
   params: { id: string };
-  searchParams: SearchParams;
 }): Promise<JSX.Element> {
-  const supabase = createClient();
+  const supabase = createPublicClient();
 
   const { data: video, error } = await supabase
     .from("videos")
@@ -101,24 +110,21 @@ export default async function VideoPage({
 
   const row = video as Video;
 
-  let backHref = "/";
-  let backText = "חזרה לראשי";
+  // Every playlist this video is in — the back link picks the one in `?playlist=`.
+  const { data: memberships, error: membershipError } = await supabase
+    .from("playlist_videos")
+    .select("playlist_id, playlists(title)")
+    .eq("video_id", row.id);
 
-  const playlistId = firstParam(searchParams.playlist)?.trim();
-  if (playlistId !== undefined && playlistId !== "") {
-    const { data: playlist, error: plErr } = await supabase
-      .from("playlists")
-      .select("title")
-      .eq("id", playlistId)
-      .maybeSingle();
+  if (membershipError !== null) {
+    console.error("[video/[id]] playlists", membershipError.message);
+  }
 
-    if (plErr !== null) {
-      console.error("[video/[id]] playlist", plErr.message);
-    }
-
-    if (playlist !== null && typeof playlist.title === "string") {
-      backHref = `/playlist/${playlistId}`;
-      backText = `חזרה אל: ${playlist.title}`;
+  const playlistTitles: Record<string, string> = {};
+  for (const m of (memberships ?? []) as PlaylistMembershipRow[]) {
+    const pl = Array.isArray(m.playlists) ? m.playlists[0] : m.playlists;
+    if (pl !== undefined && pl !== null && typeof pl.title === "string") {
+      playlistTitles[m.playlist_id] = pl.title;
     }
   }
 
@@ -139,8 +145,7 @@ export default async function VideoPage({
         description: row.description,
         youtube_url: row.youtube_url,
       }}
-      backHref={backHref}
-      backText={backText}
+      playlistTitles={playlistTitles}
       shareUrl={shareUrl}
       shareText={shareText}
     />

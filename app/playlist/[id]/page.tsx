@@ -6,7 +6,7 @@ import { PlaylistVideoItem } from "@/components/feed/PlaylistVideoItem";
 import { PageContextBar } from "@/components/layout/PageContextBar";
 import { ShareButton } from "@/components/shared/ShareButton";
 import { SITE_ORIGIN, absoluteOgImageUrl } from "@/lib/site";
-import { createClient } from "@/utils/supabase/server";
+import { createPublicClient } from "@/utils/supabase/public";
 
 import type { Playlist, Video } from "@/types/database";
 
@@ -16,6 +16,19 @@ type PlaylistVideoRelationRow = {
 };
 
 const OG_PLAYLIST_FALLBACK = "צפו בפלייליסט המלא בתדר-ישר-אל.";
+
+/** Served from cache; admin edits refresh it immediately (see `revalidatePublicPages`). */
+export const revalidate = 300;
+
+/** Prebuild every playlist; ones added later render on first visit and are cached. */
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  const { data, error } = await createPublicClient().from("playlists").select("id");
+  if (error !== null) {
+    console.error("[playlist/[id]] generateStaticParams", error.message);
+    return [];
+  }
+  return (data ?? []).map((row: { id: string }) => ({ id: row.id }));
+}
 
 function normalizeVideos(rows: PlaylistVideoRelationRow[] | null): Video[] {
   if (rows === null) return [];
@@ -39,7 +52,7 @@ export async function generateMetadata({
 }: {
   params: { id: string };
 }): Promise<Metadata> {
-  const supabase = createClient();
+  const supabase = createPublicClient();
   const { data: playlist, error } = await supabase
     .from("playlists")
     .select("title, subtitle, description, cover_image_url")
@@ -104,7 +117,7 @@ export default async function PlaylistDossierPage({
   params: { id: string };
 }): Promise<JSX.Element> {
   const { id } = params;
-  const supabase = createClient();
+  const supabase = createPublicClient();
 
   const { data: playlist, error: playlistError } = await supabase
     .from("playlists")
@@ -156,7 +169,7 @@ export default async function PlaylistDossierPage({
 
   return (
     <div className="min-h-screen bg-[#F9F9F7] text-zinc-900" dir="rtl">
-      <PageContextBar backHref="/" backText="חזרה לראשי" />
+      <PageContextBar backHref="/revelations" backText="חזרה לחשיפות אמת" />
 
       <section className="relative flex h-[40vh] min-h-[350px] w-full items-end pb-12 md:h-[50vh]">
         {hasCover ? (
