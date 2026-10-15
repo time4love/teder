@@ -1,7 +1,7 @@
 "use client";
 
-import type { PointerEvent, ReactElement } from "react";
-import { useState } from "react";
+import type { KeyboardEvent, MouseEvent, PointerEvent, ReactElement } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
   AnimatePresence,
@@ -11,6 +11,8 @@ import {
   useTransform,
 } from "framer-motion";
 
+import { BURST_MS, LightBursts, makeBurst } from "@/components/about/LightBurst";
+import type { Burst } from "@/components/about/LightBurst";
 import { FrequencyWaves } from "@/components/shared/FrequencyWaves";
 import type { Ribbon, WavePalette } from "@/components/shared/FrequencyWaves";
 
@@ -60,6 +62,13 @@ const FRONT_MOTES = Array.from({ length: 16 }, (_, i) => ({
 
 type Mote = (typeof BACK_MOTES)[number];
 
+/** The heading, word by word — each word lights up when touched. */
+const HEADING_WORDS = ["להתחבר", "לתדר", "אמת"] as const;
+
+/** Blazing-light treatment shared by the dove and the words. */
+const BLAZE_FILTER =
+  "drop-shadow(0 0 14px #fff) drop-shadow(0 0 40px rgba(255,236,180,0.95)) drop-shadow(0 0 90px rgba(255,214,140,0.8))";
+
 /** How far each depth layer shifts with the pointer — nearer layers move more. */
 const BACK_PARALLAX_PX = 8;
 const FRONT_PARALLAX_PX = 34;
@@ -67,8 +76,10 @@ const FRONT_PARALLAX_PX = 34;
 /**
  * About page scene: the dove from the logo, still, above flowing frequency waves in the
  * logo's blue and red. Motes of light rise behind and in front of it for depth; the near
- * ones shift more with the pointer. Touching the dove sends a ripple and a surge through
- * the waves.
+ * ones shift more with the pointer. Touching the dove turns it into a silhouette of light
+ * that floods the screen for a moment (with a ripple and a surge through the waves);
+ * touching a word of the heading lights it up the same way and releases points of light
+ * that rise to join the motes.
  */
 export function DoveScene(): ReactElement {
   const reduceMotion = useReducedMotion() === true;
@@ -87,7 +98,27 @@ export function DoveScene(): ReactElement {
     pointerY.set(((e.clientY - rect.top) / rect.height) * 2 - 1);
   };
 
-  const sendPulse = (): void => setPulse((p) => p + 1);
+  const [bursts, setBursts] = useState<Burst[]>([]);
+  const burstIdRef = useRef(0);
+  const burstTimersRef = useRef<number[]>([]);
+
+  useEffect(
+    () => () => burstTimersRef.current.forEach((t) => window.clearTimeout(t)),
+    [],
+  );
+
+  /** The dove blazes into light: ripple, wave surge and the illumination all share `pulse`. */
+  const illuminate = (): void => setPulse((p) => p + 1);
+
+  const releaseLightAt = (x: number, y: number): void => {
+    if (reduceMotion) return;
+    const id = ++burstIdRef.current;
+    setBursts((prev) => [...prev, makeBurst(id, x, y)]);
+    burstTimersRef.current.push(
+      window.setTimeout(() => setBursts((prev) => prev.filter((b) => b.id !== id)), BURST_MS),
+    );
+  };
+
 
   return (
     <div
@@ -96,7 +127,7 @@ export function DoveScene(): ReactElement {
         pointerX.set(0);
         pointerY.set(0);
       }}
-      className="relative isolate flex h-[calc(100dvh-4rem)] min-h-[560px] w-full flex-col items-center overflow-hidden text-white"
+      className="relative isolate flex h-[calc(100dvh-4rem)] min-h-[560px] w-full flex-col items-center overflow-clip text-white"
     >
       {/* Night sky with the logo's two color fields */}
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-20 bg-[#05050a]" />
@@ -198,9 +229,9 @@ export function DoveScene(): ReactElement {
         >
           <button
             type="button"
-            onClick={sendPulse}
+            onClick={illuminate}
             aria-label="היונה של תדר-ישר-אל"
-            className="block w-full cursor-pointer drop-shadow-[0_0_28px_rgba(255,244,214,0.55)] focus-visible:outline-none"
+            className="relative block w-full cursor-pointer drop-shadow-[0_0_28px_rgba(255,244,214,0.55)] focus-visible:outline-none"
           >
             <Image
               src="/dove.png"
@@ -211,6 +242,29 @@ export function DoveScene(): ReactElement {
               draggable={false}
               className="h-auto w-full select-none"
             />
+            {/* The dove as a silhouette of blazing light */}
+            <AnimatePresence>
+              {pulse > 0 ? (
+                <motion.span
+                  key={pulse}
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 1, 1, 0] }}
+                  transition={{ duration: 1.5, times: [0, 0.12, 0.45, 1], ease: "easeOut" }}
+                  style={{ filter: BLAZE_FILTER }}
+                >
+                  <Image
+                    src="/dove.png"
+                    alt=""
+                    width={1551}
+                    height={1008}
+                    draggable={false}
+                    className="h-auto w-full select-none [filter:brightness(0)_invert(1)]"
+                  />
+                </motion.span>
+              ) : null}
+            </AnimatePresence>
           </button>
         </motion.div>
       </div>
@@ -226,6 +280,26 @@ export function DoveScene(): ReactElement {
         </motion.div>
       ) : null}
 
+      {/* The light floods the screen for a moment */}
+      <AnimatePresence>
+        {pulse > 0 && !reduceMotion ? (
+          <motion.div
+            key={pulse}
+            aria-hidden
+            className="pointer-events-none fixed inset-0 z-[70]"
+            style={{
+              background:
+                "radial-gradient(circle at 50% 32%, rgba(255,255,255,0.95), rgba(255,240,205,0.6) 35%, rgba(255,230,190,0.15) 75%)",
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.9, 0] }}
+            transition={{ duration: 1.1, times: [0, 0.15, 1], ease: "easeOut" }}
+          />
+        ) : null}
+      </AnimatePresence>
+
+      <LightBursts bursts={bursts} />
+
       {/* Words */}
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 24 }}
@@ -234,7 +308,13 @@ export function DoveScene(): ReactElement {
         className="relative mt-auto mb-[9vh] flex flex-col items-center gap-4 px-6 text-center"
       >
         <h1 className="bg-gradient-to-l from-[#ff5a64] via-[#c08bff] to-[#5b84ff] bg-clip-text font-heading text-5xl font-bold leading-tight tracking-tight text-transparent drop-shadow-[0_0_30px_rgba(192,139,255,0.35)] md:text-7xl">
-          להתחבר לתדר אמת.
+          {HEADING_WORDS.map((word, i) => (
+            <Fragment key={word}>
+              {i > 0 ? " " : null}
+              <WordOfLight word={word} onRelease={releaseLightAt} still={reduceMotion} />
+            </Fragment>
+          ))}
+          .
         </h1>
         <p className="text-lg font-medium text-white/75 md:text-xl">
           ארכיון חשיפות, עדויות ומידע.
@@ -266,5 +346,64 @@ function MoteLayer({ motes }: { motes: readonly Mote[] }): ReactElement {
         />
       ))}
     </>
+  );
+}
+
+interface WordOfLightProps {
+  word: string;
+  /** Releases rising points of light from a screen position. */
+  onRelease: (x: number, y: number) => void;
+  still: boolean;
+}
+
+/**
+ * A heading word that, when touched, blazes into white light like the dove and releases
+ * points of light from where it was touched.
+ */
+function WordOfLight({ word, onRelease, still }: WordOfLightProps): ReactElement {
+  /** Counts touches (keys a fresh glow each time); 0 while the word is not glowing. */
+  const [lit, setLit] = useState(0);
+  const touchesRef = useRef(0);
+
+  const blaze = (x: number, y: number): void => {
+    setLit(++touchesRef.current);
+    onRelease(x, y);
+  };
+
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      onClick={(e: MouseEvent<HTMLSpanElement>) => blaze(e.clientX, e.clientY)}
+      onKeyDown={(e: KeyboardEvent<HTMLSpanElement>) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        const r = e.currentTarget.getBoundingClientRect();
+        blaze(r.left + r.width / 2, r.top + r.height / 2);
+      }}
+      className="relative inline-block cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+    >
+      {word}
+      {/* The word as white light, over its gradient */}
+      {lit > 0 ? (
+        <motion.span
+          key={lit}
+          aria-hidden
+          // Removed once it fades, so the word isn't read or copied twice.
+          onAnimationComplete={() => setLit((n) => (n === lit ? 0 : n))}
+          className="pointer-events-none absolute inset-0 text-white"
+          style={{ filter: BLAZE_FILTER }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: still ? [0, 1, 0] : [0, 1, 1, 0] }}
+          transition={{
+            duration: still ? 0.8 : 1.6,
+            times: still ? [0, 0.3, 1] : [0, 0.1, 0.45, 1],
+            ease: "easeOut",
+          }}
+        >
+          {word}
+        </motion.span>
+      ) : null}
+    </span>
   );
 }
