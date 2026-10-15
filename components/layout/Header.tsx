@@ -9,6 +9,9 @@ import { Menu, X } from "lucide-react";
 import { FREEDOM_PROTOCOL_HREF, FREEDOM_PROTOCOL_TITLE } from "@/lib/gates";
 import { cn } from "@/lib/utils";
 
+/** Pages with a dark full-screen scene behind the header. */
+const DARK_PAGES: ReadonlySet<string> = new Set(["/", "/about"]);
+
 const NAV_LINKS: { href: string; label: string }[] = [
   { href: FREEDOM_PROTOCOL_HREF, label: FREEDOM_PROTOCOL_TITLE },
   { href: "/about", label: "אודות" },
@@ -20,8 +23,8 @@ const NAV_LINKS: { href: string; label: string }[] = [
  */
 export function Header(): JSX.Element {
   const [open, setOpen] = React.useState(false);
-  /** The gate portal is dark and immersive — the header turns translucent over it. */
-  const onPortal = usePathname() === "/";
+  /** Dark, immersive pages — the header turns translucent over them. */
+  const onPortal = DARK_PAGES.has(usePathname());
 
   React.useEffect(() => {
     if (!open) return;

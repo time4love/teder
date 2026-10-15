@@ -16,7 +16,7 @@ import {
 import type { AnimationPlaybackControls, MotionValue } from "framer-motion";
 import { ArrowLeft, DoorOpen } from "lucide-react";
 
-import { FrequencyWaves } from "@/components/home/FrequencyWaves";
+import { FrequencyWaves } from "@/components/shared/FrequencyWaves";
 import { GateArch } from "@/components/home/GateArch";
 import { GateCircle } from "@/components/home/GateCircle";
 import { GateDiamond } from "@/components/home/GateDiamond";
@@ -34,6 +34,7 @@ import {
   frontGateIndex,
   gateAngle,
   ringCenterOffsetX,
+  ringColorAt,
   ringConicGradient,
   ringFloorGradient,
   ringPoint,
@@ -440,7 +441,11 @@ export function GatePortal(): ReactElement {
       />
 
       <FrequencyWaves
-        theta={theta}
+        colors={() => ({
+          left: ringColorAt(-90, theta.get()),
+          front: ringColorAt(0, theta.get()),
+          right: ringColorAt(90, theta.get()),
+        })}
         pointerX={pointerX}
         energized={engaged !== null}
         still={reduceMotion}
