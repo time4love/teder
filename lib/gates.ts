@@ -8,7 +8,8 @@ export type GateId = "justice" | "revelations" | "medicine";
 export interface Gate {
   id: GateId;
   title: string;
-  tagline: string;
+  /** Line under the gate's name on its page; optional. */
+  tagline?: string;
   href: string;
   /** Base hue as `[r, g, b]` — interpolated around the ring, so it must stay numeric. */
   rgb: readonly [number, number, number];
@@ -32,7 +33,6 @@ export const GATES: readonly Gate[] = [
   {
     id: "medicine",
     title: "רפואת אמת",
-    tagline: "ריפוי, מידע ובריאות שלמה",
     href: "/medicine",
     rgb: [46, 196, 160],
   },

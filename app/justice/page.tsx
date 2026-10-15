@@ -7,7 +7,7 @@ const gate = GATES[0];
 
 export const metadata: Metadata = {
   title: gate.title,
-  description: gate.tagline,
+  description: gate.tagline ?? gate.title,
 };
 
 export default function JusticePage(): JSX.Element {

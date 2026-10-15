@@ -20,7 +20,7 @@ const TOPICS: readonly GateTopic[] = [
 
 export const metadata: Metadata = {
   title: gate.title,
-  description: gate.tagline,
+  description: "רפואת הכתר · רפואת אמת מתוקשרת",
 };
 
 export default function MedicinePage(): JSX.Element {
