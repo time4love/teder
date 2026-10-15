@@ -256,7 +256,7 @@ export function FrequencyTuner(): ReactElement {
   return (
     <div
       onWheel={handleWheel}
-      className="relative isolate flex h-[calc(100dvh-4rem)] min-h-[600px] w-full flex-col items-center overflow-hidden px-4 text-white"
+      className="relative isolate flex h-[calc(100dvh-4rem)] min-h-[600px] w-full flex-col items-center overflow-clip px-4 text-white"
     >
       {/* Sky tinted by the station coming through */}
       <motion.div

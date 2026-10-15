@@ -424,7 +424,7 @@ export function GatePortal(): ReactElement {
   const ringCenterY = RING_CENTER_Y[orientation];
 
   return (
-    <div className="relative isolate h-[calc(100dvh-4rem)] min-h-[560px] w-full overflow-hidden text-white md:min-h-[640px]">
+    <div className="relative isolate h-[calc(100dvh-4rem)] min-h-[560px] w-full overflow-clip text-white md:min-h-[640px]">
       {/* Ambient background reflecting the visible arcs of the ring (extends under the header) */}
       <motion.div
         aria-hidden
