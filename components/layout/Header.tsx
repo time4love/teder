@@ -3,11 +3,14 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
+import { FREEDOM_PROTOCOL_HREF, FREEDOM_PROTOCOL_TITLE } from "@/lib/gates";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS: { href: string; label: string }[] = [
+  { href: FREEDOM_PROTOCOL_HREF, label: FREEDOM_PROTOCOL_TITLE },
   { href: "/about", label: "אודות" },
   { href: "/contact", label: "צור קשר" },
 ];
@@ -17,6 +20,8 @@ const NAV_LINKS: { href: string; label: string }[] = [
  */
 export function Header(): JSX.Element {
   const [open, setOpen] = React.useState(false);
+  /** The gate portal is dark and immersive — the header turns translucent over it. */
+  const onPortal = usePathname() === "/";
 
   React.useEffect(() => {
     if (!open) return;
@@ -32,8 +37,10 @@ export function Header(): JSX.Element {
       <header
         dir="rtl"
         className={cn(
-          "fixed top-0 z-[60] flex h-16 w-full items-center justify-between border-b border-zinc-200",
-          "bg-white/80 backdrop-blur-md px-4 lg:px-8",
+          "fixed top-0 z-[60] flex h-16 w-full items-center justify-between border-b px-4 backdrop-blur-md lg:px-8",
+          onPortal
+            ? "border-white/10 bg-black/20"
+            : "border-zinc-200 bg-white/80",
         )}
       >
         <Link
@@ -51,14 +58,20 @@ export function Header(): JSX.Element {
         </Link>
 
         <nav
-          className="hidden items-center gap-8 text-sm font-medium tracking-tight text-zinc-700 lg:flex"
+          className={cn(
+            "hidden items-center gap-8 text-sm font-medium tracking-tight lg:flex",
+            onPortal ? "text-white/75" : "text-zinc-700",
+          )}
           aria-label="עמודים"
         >
           {NAV_LINKS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="transition hover:text-zinc-900"
+              className={cn(
+                "transition",
+                onPortal ? "hover:text-white" : "hover:text-zinc-900",
+              )}
             >
               {item.label}
             </Link>
@@ -68,7 +81,12 @@ export function Header(): JSX.Element {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex size-10 items-center justify-center rounded-lg text-zinc-900 transition hover:bg-zinc-100 lg:hidden"
+          className={cn(
+            "inline-flex size-10 items-center justify-center rounded-lg transition lg:hidden",
+            onPortal
+              ? "text-white hover:bg-white/10"
+              : "text-zinc-900 hover:bg-zinc-100",
+          )}
           aria-label="פתיחת תפריט"
         >
           <Menu className="size-6" />

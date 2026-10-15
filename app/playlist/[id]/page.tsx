@@ -156,7 +156,7 @@ export default async function PlaylistDossierPage({
 
   return (
     <div className="min-h-screen bg-[#F9F9F7] text-zinc-900" dir="rtl">
-      <PageContextBar backHref="/" backText="חזרה לראשי" />
+      <PageContextBar backHref="/revelations" backText="חזרה לחשיפות אמת" />
 
       <section className="relative flex h-[40vh] min-h-[350px] w-full items-end pb-12 md:h-[50vh]">
         {hasCover ? (

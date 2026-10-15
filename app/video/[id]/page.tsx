@@ -101,8 +101,8 @@ export default async function VideoPage({
 
   const row = video as Video;
 
-  let backHref = "/";
-  let backText = "חזרה לראשי";
+  let backHref = "/revelations";
+  let backText = "חזרה לחשיפות אמת";
 
   const playlistId = firstParam(searchParams.playlist)?.trim();
   if (playlistId !== undefined && playlistId !== "") {
