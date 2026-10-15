@@ -4,10 +4,18 @@ import type { ReactElement } from "react";
 import { useEffect, useRef } from "react";
 import type { MotionValue } from "framer-motion";
 
-import { ringColorAt } from "@/lib/gate-ring";
 import { rgbString } from "@/lib/gates";
 
-interface Ribbon {
+type Rgb = readonly [number, number, number];
+
+/** Strand colors across the screen: left edge, center, right edge. */
+export interface WavePalette {
+  left: Rgb;
+  front: Rgb;
+  right: Rgb;
+}
+
+export interface Ribbon {
   /** Vertical center as a fraction of the canvas height. */
   y: number;
   /** Peak amplitude as a fraction of the canvas height. */
@@ -24,10 +32,10 @@ interface Ribbon {
 }
 
 /**
- * Two ribbons of fine strands along the bottom of the screen, like the frequency waves
- * behind the words in the logo.
+ * Default: two ribbons of fine strands along the bottom of the screen, like the frequency
+ * waves behind the words in the logo.
  */
-const RIBBONS: readonly Ribbon[] = [
+export const BOTTOM_RIBBONS: readonly Ribbon[] = [
   { y: 0.86, amp: 0.1, freq: 1.15, freq2: 2.6, speed: 0.45, twist: 1.7, strands: 42, alpha: 0.2 },
   { y: 0.83, amp: 0.07, freq: 0.8, freq2: 3.4, speed: -0.32, twist: 2.4, strands: 30, alpha: 0.13 },
 ];
@@ -36,29 +44,42 @@ const RIBBONS: readonly Ribbon[] = [
 const STEP = 6;
 
 export interface FrequencyWavesProps {
-  /** Ring rotation — the strands take the colors of the ring arcs the viewer sees. */
-  theta: MotionValue<number>;
+  /** Read every frame — lets the strands follow live colors (e.g. the gate ring). */
+  colors: () => WavePalette;
   /** Pointer position across the stage, -1…1 — the waves lean toward it. */
-  pointerX: MotionValue<number>;
-  /** A gate is engaged — the waves gather energy. */
+  pointerX?: MotionValue<number>;
+  /** Something is engaged — the waves gather energy. */
   energized: boolean;
   /** Draw a single still frame instead of animating. */
   still: boolean;
+  ribbons?: readonly Ribbon[];
+  /** Change this value to send a surge through the waves. */
+  pulseKey?: number;
 }
 
 /**
  * Full-screen canvas of flowing frequency ribbons: many thin phase-shifted strands that
- * fan open and close, tinted left-to-right by the colors of the gate ring.
+ * fan open and close, tinted left-to-right by the given palette.
  */
 export function FrequencyWaves({
-  theta,
+  colors,
   pointerX,
   energized,
   still,
+  ribbons = BOTTOM_RIBBONS,
+  pulseKey,
 }: FrequencyWavesProps): ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const energizedRef = useRef(energized);
   energizedRef.current = energized;
+  const colorsRef = useRef(colors);
+  colorsRef.current = colors;
+  /** Surge level, kicked to 1 by a pulse and decaying back to 0. */
+  const surgeRef = useRef(0);
+
+  useEffect(() => {
+    if (pulseKey !== undefined && pulseKey > 0) surgeRef.current = 1;
+  }, [pulseKey]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -89,19 +110,18 @@ export function FrequencyWaves({
       last = now;
       // Ease toward the engaged state so the waves swell and settle smoothly.
       energy += ((energizedRef.current ? 1 : 0) - energy) * Math.min(dt * 2.5, 1);
-      time += dt * (1 + energy * 0.6);
+      surgeRef.current = Math.max(0, surgeRef.current - dt * 0.9);
+      const surge = surgeRef.current * surgeRef.current;
+      time += dt * (1 + energy * 0.6 + surge * 2.5);
 
-      const t = theta.get();
-      const lean = pointerX.get();
-      const left = ringColorAt(-90, t);
-      const front = ringColorAt(0, t);
-      const right = ringColorAt(90, t);
+      const lean = pointerX?.get() ?? 0;
+      const { left, front, right } = colorsRef.current();
 
       ctx.clearRect(0, 0, width, height);
       ctx.globalCompositeOperation = "lighter";
       ctx.lineWidth = 1;
 
-      for (const r of RIBBONS) {
+      for (const r of ribbons) {
         const gradient = ctx.createLinearGradient(0, 0, width, 0);
         gradient.addColorStop(0, rgbString(left, 0));
         gradient.addColorStop(0.18, rgbString(left, r.alpha));
@@ -111,7 +131,7 @@ export function FrequencyWaves({
         ctx.strokeStyle = gradient;
 
         const cy = height * r.y;
-        const amp = height * r.amp * (1 + energy * 0.35);
+        const amp = height * r.amp * (1 + energy * 0.35 + surge * 0.9);
         const phase = time * r.speed;
 
         for (let i = 0; i < r.strands; i++) {
@@ -140,7 +160,7 @@ export function FrequencyWaves({
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [theta, pointerX, still]);
+  }, [pointerX, ribbons, still]);
 
   return (
     <canvas
