@@ -1,6 +1,6 @@
 import { PlaylistGrid } from "@/components/feed/PlaylistGrid";
 import { HomeHero } from "@/components/home/HomeHero";
-import { createClient } from "@/utils/supabase/server";
+import { createPublicClient } from "@/utils/supabase/public";
 
 import type { Metadata } from "next";
 
@@ -10,8 +10,11 @@ export const metadata: Metadata = {
   title: "חשיפות אמת",
 };
 
+/** Served from cache; admin edits refresh it immediately (see `revalidatePublicPages`). */
+export const revalidate = 300;
+
 export default async function RevelationsPage(): Promise<JSX.Element> {
-  const supabase = createClient();
+  const supabase = createPublicClient();
 
   const { data: rows, error } = await supabase
     .from("playlists")

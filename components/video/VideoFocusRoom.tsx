@@ -1,12 +1,12 @@
 "use client";
 
 import type { ReactElement } from "react";
-import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { AlignRight, ArrowRight, Play } from "lucide-react";
+import { AlignRight, Play } from "lucide-react";
 
 import { ShareButton } from "@/components/shared/ShareButton";
+import { VideoBackLink } from "@/components/video/VideoBackLink";
 import { cn } from "@/lib/utils";
 import { getYouTubeVideoId } from "@/utils/youtube";
 
@@ -19,8 +19,8 @@ export type VideoFocusRoomVideo = {
 
 export interface VideoFocusRoomProps {
   video: VideoFocusRoomVideo;
-  backHref: string;
-  backText: string;
+  /** Playlists containing this video (id → title), for the back link. */
+  playlistTitles: Record<string, string>;
   shareUrl: string;
   shareText: string;
 }
@@ -30,8 +30,7 @@ export interface VideoFocusRoomProps {
  */
 export function VideoFocusRoom({
   video,
-  backHref,
-  backText,
+  playlistTitles,
   shareUrl,
   shareText,
 }: VideoFocusRoomProps): ReactElement {
@@ -54,13 +53,7 @@ export function VideoFocusRoom({
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200/80 bg-white/90 p-4 backdrop-blur-sm md:px-8">
-        <Link
-          href={backHref}
-          className="inline-flex items-center text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
-        >
-          <ArrowRight className="ms-2 size-4 shrink-0" aria-hidden />
-          {backText}
-        </Link>
+        <VideoBackLink playlistTitles={playlistTitles} />
 
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           <ShareButton

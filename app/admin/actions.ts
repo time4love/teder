@@ -1,7 +1,7 @@
 "use server";
 
 import { type SupabaseClient } from "@supabase/supabase-js";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   adminPlaylistFormSchema,
@@ -16,6 +16,7 @@ import {
 import { randomBytes } from "crypto";
 
 import { createClient as createSupabaseServerClient } from "@/utils/supabase/server";
+import { PUBLIC_CONTENT_TAG } from "@/utils/supabase/public";
 import { createServiceRoleClient } from "@/utils/supabase/service-role";
 import { getYouTubeVideoId } from "@/utils/youtube";
 
@@ -295,6 +296,17 @@ export type CreatedCategory = {
 };
 
 /**
+ * Public pages are served from cache (ISR); refresh them right after any content change
+ * so visitors see edits immediately rather than after the revalidate window.
+ */
+function revalidatePublicPages(): void {
+  revalidateTag(PUBLIC_CONTENT_TAG);
+  revalidatePath("/revelations");
+  revalidatePath("/playlist/[id]", "page");
+  revalidatePath("/video/[id]", "page");
+}
+
+/**
  * Creates a category with a unique URL-safe slug (service role bypasses RLS).
  */
 export async function createCategoryAction(
@@ -331,7 +343,7 @@ export async function createCategoryAction(
       return { error: "לא ניתן ליצור קטגוריה" };
     }
 
-    revalidatePath("/");
+    revalidatePublicPages();
     revalidatePath("/admin/videos");
     revalidatePath("/admin/videos/new");
     revalidatePath("/admin/playlists");
@@ -358,7 +370,7 @@ export type CreatedPlaylist = {
 };
 
 function revalidatePlaylistSurfaces(): void {
-  revalidatePath("/");
+  revalidatePublicPages();
   revalidatePath("/admin/playlists");
   revalidatePath("/admin/playlists/new");
   revalidatePath("/admin/videos");
@@ -607,7 +619,7 @@ export async function addVideoAction(
       return { error: sync.error };
     }
 
-    revalidatePath("/");
+    revalidatePublicPages();
     revalidatePath("/admin/videos");
     revalidatePath("/admin/playlists");
     for (const pid of row.playlist_ids) {
@@ -687,7 +699,7 @@ export async function updateVideoAction(
       return { error: sync.error };
     }
 
-    revalidatePath("/");
+    revalidatePublicPages();
     revalidatePath("/admin/videos");
     revalidatePath("/admin/playlists");
     for (const pid of row.playlist_ids) {
@@ -720,7 +732,7 @@ export async function deleteVideoAction(
       return { error: error.message };
     }
 
-    revalidatePath("/");
+    revalidatePublicPages();
     revalidatePath("/admin/videos");
     revalidatePath("/admin/playlists");
     return { success: true };
