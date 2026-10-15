@@ -38,7 +38,9 @@ export const GATES: readonly Gate[] = [
   },
 ] as const;
 
-export const FREEDOM_PROTOCOL_HREF = "/freedom-protocol" as const;
+/** The protocol is a video in the "הונאת האנושות הגדולה" playlist (episode 4). */
+export const FREEDOM_PROTOCOL_HREF =
+  "/video/5dcf523a-2d3c-4c00-ab7b-608085fa9ea7?playlist=5777d90b-4a32-4f34-9001-453a7b89266e" as const;
 export const FREEDOM_PROTOCOL_TITLE = "פרוטוקול יציאה לחופשי" as const;
 
 /** CSS `rgb()` / `rgba()` string for a gate color. */

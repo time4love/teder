@@ -1,18 +1,8 @@
-import type { Metadata } from "next";
+import { permanentRedirect } from "next/navigation";
 
-import { ComingSoon } from "@/components/home/ComingSoon";
-import { FREEDOM_PROTOCOL_TITLE } from "@/lib/gates";
+import { FREEDOM_PROTOCOL_HREF } from "@/lib/gates";
 
-export const metadata: Metadata = {
-  title: FREEDOM_PROTOCOL_TITLE,
-};
-
-export default function FreedomProtocolPage(): JSX.Element {
-  return (
-    <ComingSoon
-      title={FREEDOM_PROTOCOL_TITLE}
-      tagline="הדרך החוצה, צעד אחר צעד"
-      rgb={[214, 196, 140]}
-    />
-  );
+/** The protocol lives on its video page; keep this address working for old links. */
+export default function FreedomProtocolPage(): never {
+  permanentRedirect(FREEDOM_PROTOCOL_HREF);
 }
