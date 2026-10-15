@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent, MouseEvent, PointerEvent, ReactElement } from "react";
+import type { KeyboardEvent, MouseEvent, PointerEvent, ReactElement, ReactNode } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
@@ -127,7 +127,7 @@ export function DoveScene(): ReactElement {
         pointerX.set(0);
         pointerY.set(0);
       }}
-      className="relative isolate flex h-[calc(100dvh-4rem)] min-h-[560px] w-full flex-col items-center overflow-clip text-white"
+      className="relative isolate flex min-h-[calc(100dvh-4rem)] w-full flex-col items-center overflow-x-clip text-white"
     >
       {/* Night sky with the logo's two color fields */}
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-20 bg-[#05050a]" />
@@ -163,163 +163,165 @@ export function DoveScene(): ReactElement {
         pulseKey={pulse}
       />
 
-      {/* Motes behind the dove */}
-      {!reduceMotion ? (
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10"
-          style={{ x: backX, y: backY }}
-        >
-          <MoteLayer motes={BACK_MOTES} />
-        </motion.div>
-      ) : null}
+      {/* Opening: dove and heading, with the text starting right below so it shows it's there */}
+      <section className="relative flex w-full flex-col items-center">
+        {/* Motes behind the dove */}
+        {!reduceMotion ? (
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10"
+            style={{ x: backX, y: backY }}
+          >
+            <MoteLayer motes={BACK_MOTES} />
+          </motion.div>
+        ) : null}
 
-      {/* Dove */}
-      <div className="relative mt-[4vh] flex w-full justify-center md:mt-[5vh]">
-        {/* Halo and slow light rays behind the dove */}
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[min(620px,95vw)] rounded-full"
-          style={{
-            x: "-50%",
-            y: "-50%",
-            background:
-              "radial-gradient(closest-side, rgba(255,247,225,0.5), rgba(255,220,170,0.16) 45%, transparent 72%)",
-          }}
-          animate={reduceMotion ? undefined : { scale: [1, 1.08, 1], opacity: [0.75, 1, 0.75] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[min(900px,140vw)]"
-          style={{
-            x: "-50%",
-            y: "-50%",
-            background:
-              "repeating-conic-gradient(from 0deg, rgba(255,240,210,0.14) 0deg 3deg, transparent 3deg 14deg)",
-            maskImage: "radial-gradient(closest-side, #000 10%, transparent 70%)",
-            WebkitMaskImage: "radial-gradient(closest-side, #000 10%, transparent 70%)",
-          }}
-          animate={reduceMotion ? undefined : { rotate: 360 }}
-          transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
-        />
+        {/* Dove */}
+        <div className="relative mt-[4vh] flex w-full justify-center md:mt-[5vh]">
+          {/* Halo and slow light rays behind the dove */}
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[min(620px,95vw)] rounded-full"
+            style={{
+              x: "-50%",
+              y: "-50%",
+              background:
+                "radial-gradient(closest-side, rgba(255,247,225,0.5), rgba(255,220,170,0.16) 45%, transparent 72%)",
+            }}
+            animate={reduceMotion ? undefined : { scale: [1, 1.08, 1], opacity: [0.75, 1, 0.75] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[min(900px,140vw)]"
+            style={{
+              x: "-50%",
+              y: "-50%",
+              background:
+                "repeating-conic-gradient(from 0deg, rgba(255,240,210,0.14) 0deg 3deg, transparent 3deg 14deg)",
+              maskImage: "radial-gradient(closest-side, #000 10%, transparent 70%)",
+              WebkitMaskImage: "radial-gradient(closest-side, #000 10%, transparent 70%)",
+            }}
+            animate={reduceMotion ? undefined : { rotate: 360 }}
+            transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
+          />
 
-        {/* Ripple sent out by a touch */}
+          {/* Ripple sent out by a touch */}
+          <AnimatePresence>
+            {pulse > 0 ? (
+              <motion.div
+                key={pulse}
+                aria-hidden
+                className="pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[260px] rounded-full border border-white/60"
+                style={{ x: "-50%", y: "-50%" }}
+                initial={{ scale: 0.4, opacity: 0.8 }}
+                animate={{ scale: 4, opacity: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.6, ease: "easeOut" }}
+              />
+            ) : null}
+          </AnimatePresence>
+
+          {/* The dove stands still; it only fades in out of the light */}
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.8, ease: "easeOut" }}
+            className="w-[min(600px,86vw)]"
+          >
+            <button
+              type="button"
+              onClick={illuminate}
+              aria-label="היונה של תדר-ישר-אל"
+              className="relative block w-full cursor-pointer drop-shadow-[0_0_28px_rgba(255,244,214,0.55)] focus-visible:outline-none"
+            >
+              <Image
+                src="/dove.png"
+                alt=""
+                width={1551}
+                height={1008}
+                priority
+                draggable={false}
+                className="h-auto w-full select-none"
+              />
+              {/* The dove as a silhouette of blazing light */}
+              <AnimatePresence>
+                {pulse > 0 ? (
+                  <motion.span
+                    key={pulse}
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0, 1, 1, 0] }}
+                    transition={{ duration: 1.5, times: [0, 0.12, 0.45, 1], ease: "easeOut" }}
+                    style={{ filter: BLAZE_FILTER }}
+                  >
+                    <Image
+                      src="/dove.png"
+                      alt=""
+                      width={1551}
+                      height={1008}
+                      draggable={false}
+                      className="h-auto w-full select-none [filter:brightness(0)_invert(1)]"
+                    />
+                  </motion.span>
+                ) : null}
+              </AnimatePresence>
+            </button>
+          </motion.div>
+        </div>
+
+        {/* Motes in front of the dove */}
+        {!reduceMotion ? (
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-10"
+            style={{ x: frontX, y: frontY }}
+          >
+            <MoteLayer motes={FRONT_MOTES} />
+          </motion.div>
+        ) : null}
+
+        {/* The light floods the screen for a moment */}
         <AnimatePresence>
-          {pulse > 0 ? (
+          {pulse > 0 && !reduceMotion ? (
             <motion.div
               key={pulse}
               aria-hidden
-              className="pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[260px] rounded-full border border-white/60"
-              style={{ x: "-50%", y: "-50%" }}
-              initial={{ scale: 0.4, opacity: 0.8 }}
-              animate={{ scale: 4, opacity: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.6, ease: "easeOut" }}
+              className="pointer-events-none fixed inset-0 z-[70]"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 32%, rgba(255,255,255,0.95), rgba(255,240,205,0.6) 35%, rgba(255,230,190,0.15) 75%)",
+              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.9, 0] }}
+              transition={{ duration: 1.1, times: [0, 0.15, 1], ease: "easeOut" }}
             />
           ) : null}
         </AnimatePresence>
 
-        {/* The dove stands still; it only fades in out of the light */}
+        <LightBursts bursts={bursts} />
+
+        {/* Words */}
         <motion.div
-          initial={reduceMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.8, ease: "easeOut" }}
-          className="w-[min(600px,86vw)]"
+          initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.4, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          className="relative mb-2 mt-6 flex flex-col items-center gap-4 px-6 text-center md:mt-8"
         >
-          <button
-            type="button"
-            onClick={illuminate}
-            aria-label="היונה של תדר-ישר-אל"
-            className="relative block w-full cursor-pointer drop-shadow-[0_0_28px_rgba(255,244,214,0.55)] focus-visible:outline-none"
-          >
-            <Image
-              src="/dove.png"
-              alt=""
-              width={1551}
-              height={1008}
-              priority
-              draggable={false}
-              className="h-auto w-full select-none"
-            />
-            {/* The dove as a silhouette of blazing light */}
-            <AnimatePresence>
-              {pulse > 0 ? (
-                <motion.span
-                  key={pulse}
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: [0, 1, 1, 0] }}
-                  transition={{ duration: 1.5, times: [0, 0.12, 0.45, 1], ease: "easeOut" }}
-                  style={{ filter: BLAZE_FILTER }}
-                >
-                  <Image
-                    src="/dove.png"
-                    alt=""
-                    width={1551}
-                    height={1008}
-                    draggable={false}
-                    className="h-auto w-full select-none [filter:brightness(0)_invert(1)]"
-                  />
-                </motion.span>
-              ) : null}
-            </AnimatePresence>
-          </button>
+          <h1 className="bg-gradient-to-l from-[#ff5a64] via-[#c08bff] to-[#5b84ff] bg-clip-text font-heading text-5xl font-bold leading-tight tracking-tight text-transparent drop-shadow-[0_0_30px_rgba(192,139,255,0.35)] md:text-7xl">
+            {HEADING_WORDS.map((word, i) => (
+              <Fragment key={word}>
+                {i > 0 ? " " : null}
+                <WordOfLight word={word} onRelease={releaseLightAt} still={reduceMotion} />
+              </Fragment>
+            ))}
+            .
+          </h1>
         </motion.div>
-      </div>
+      </section>
 
-      {/* Motes in front of the dove */}
-      {!reduceMotion ? (
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-10"
-          style={{ x: frontX, y: frontY }}
-        >
-          <MoteLayer motes={FRONT_MOTES} />
-        </motion.div>
-      ) : null}
-
-      {/* The light floods the screen for a moment */}
-      <AnimatePresence>
-        {pulse > 0 && !reduceMotion ? (
-          <motion.div
-            key={pulse}
-            aria-hidden
-            className="pointer-events-none fixed inset-0 z-[70]"
-            style={{
-              background:
-                "radial-gradient(circle at 50% 32%, rgba(255,255,255,0.95), rgba(255,240,205,0.6) 35%, rgba(255,230,190,0.15) 75%)",
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.9, 0] }}
-            transition={{ duration: 1.1, times: [0, 0.15, 1], ease: "easeOut" }}
-          />
-        ) : null}
-      </AnimatePresence>
-
-      <LightBursts bursts={bursts} />
-
-      {/* Words */}
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.4, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
-        className="relative mt-auto mb-[9vh] flex flex-col items-center gap-4 px-6 text-center"
-      >
-        <h1 className="bg-gradient-to-l from-[#ff5a64] via-[#c08bff] to-[#5b84ff] bg-clip-text font-heading text-5xl font-bold leading-tight tracking-tight text-transparent drop-shadow-[0_0_30px_rgba(192,139,255,0.35)] md:text-7xl">
-          {HEADING_WORDS.map((word, i) => (
-            <Fragment key={word}>
-              {i > 0 ? " " : null}
-              <WordOfLight word={word} onRelease={releaseLightAt} still={reduceMotion} />
-            </Fragment>
-          ))}
-          .
-        </h1>
-        <p className="text-lg font-medium text-white/75 md:text-xl">
-          ארכיון חשיפות, עדויות ומידע.
-        </p>
-      </motion.div>
+      <AboutText still={reduceMotion} />
     </div>
   );
 }
@@ -405,5 +407,83 @@ function WordOfLight({ word, onRelease, still }: WordOfLightProps): ReactElement
         </motion.span>
       ) : null}
     </span>
+  );
+}
+
+/** The about text, paragraph by paragraph, as written by the site's author. */
+const ABOUT_PARAGRAPHS: readonly string[] = [
+  "אנו נמצאים בתקופת שינויים מורכבת שעובר העולם כולו - תקופת הגאולה.",
+  '"הגאולה" אינה מונח דתי אלא תהליך של שיחרור- יציאה לחופשי מהמישטר תחתיו אנו חיים:',
+  'ב-250 שנים האחרונות האנושות חיה בעולם שקר (עלמא דה-שיקרא) מהונדס ותחום, שיצרו האילומינטים/אנשי "סדר עולמי חדש"/הבונים החופשיים. - זוהי "הונאת האנושות הגדולה".',
+  "היציאה לחופשי מעול המישטר העולמי הצורר היא יציאת מצריים הלכה למעשה.",
+  "כחלק מעולם השקר שנוצר בהונאה, תחומים רבים  כמו רפואת אמת,נישכחו, ושקרים הוצגו כאמת.",
+  "חשיפות האמת בתחומים השונים, היזכרות ברפואת האמת והנגשתה ועשיית דיני צדק על הפשעים שנעשו בעולם, הינם תהליך הגאולה השלם,",
+];
+
+/** The closing lines, rising in one after another. */
+const ABOUT_CLOSING: readonly string[] = ["הפועם בתדר האמת -", "תדר ישר עם האלוהות -"];
+const ABOUT_SIGNATURE = "תדר ישר-אל.";
+
+/** Paragraphs fade up as they scroll into view. */
+function Reveal({
+  children,
+  still,
+  delay = 0,
+  className,
+}: {
+  children: ReactNode;
+  still: boolean;
+  delay?: number;
+  className?: string;
+}): ReactElement {
+  return (
+    <motion.p
+      initial={still ? false : { opacity: 0, y: 18, filter: "blur(6px)" }}
+      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      viewport={{ once: true, margin: "0px 0px -12% 0px" }}
+      transition={{ duration: 0.9, delay, ease: [0.16, 1, 0.3, 1] }}
+      className={className}
+    >
+      {children}
+    </motion.p>
+  );
+}
+
+function AboutText({ still }: { still: boolean }): ReactElement {
+  return (
+    <section className="relative z-10 w-full max-w-2xl px-6 pb-[16vh] pt-6 text-center">
+      {/* A soft veil so the words stay readable over the waves */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 -inset-y-10 -z-10 rounded-[3rem] bg-[#05050a]/45 blur-2xl"
+      />
+      <div className="flex flex-col gap-6 text-lg leading-loose text-white/85 md:text-xl">
+        {ABOUT_PARAGRAPHS.map((text) => (
+          <Reveal key={text} still={still}>
+            {text}
+          </Reveal>
+        ))}
+      </div>
+
+      <div className="mt-12 flex flex-col items-center gap-3 font-heading">
+        {ABOUT_CLOSING.map((line, i) => (
+          <Reveal
+            key={line}
+            still={still}
+            delay={i * 0.35}
+            className="text-2xl font-bold text-white/90 md:text-3xl"
+          >
+            {line}
+          </Reveal>
+        ))}
+        <Reveal
+          still={still}
+          delay={ABOUT_CLOSING.length * 0.35}
+          className="mt-2 bg-gradient-to-l from-[#ff5a64] via-[#c08bff] to-[#5b84ff] bg-clip-text text-5xl font-bold text-transparent drop-shadow-[0_0_30px_rgba(192,139,255,0.45)] md:text-6xl"
+        >
+          {ABOUT_SIGNATURE}
+        </Reveal>
+      </div>
+    </section>
   );
 }
