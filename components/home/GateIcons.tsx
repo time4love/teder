@@ -9,6 +9,8 @@ export interface GateIconProps {
   /** The gate is in focus — the symbol comes alive. */
   engaged: boolean;
   className?: string;
+  /** Stroke weight multiplier — lighter lines when the symbol is drawn large. */
+  weight?: number;
 }
 
 /** Shared stroke style for the hand-drawn gate symbols. */
@@ -19,6 +21,13 @@ const STROKE = {
   strokeLinecap: "round",
   strokeLinejoin: "round",
 } as const;
+
+/** Stroke style scaled by a weight multiplier. */
+function strokeStyle(
+  w: number,
+): Omit<typeof STROKE, "strokeWidth"> & { strokeWidth: number } {
+  return { ...STROKE, strokeWidth: STROKE.strokeWidth * w };
+}
 
 /** Rotate leaves around the point where they meet the stem. */
 const LEAF_PIVOT = { transformBox: "view-box", transformOrigin: "24px 25px" } as const;
@@ -34,13 +43,15 @@ const MOTES: readonly { cx: number; delay: number }[] = [
  * רפואת אמת — a sprout rising from the earth, its two leaves forming a heart, roots
  * reaching down: healing that grows from nature. Leaves sway and pollen rises when engaged.
  */
-function MedicineIcon({ engaged, className }: GateIconProps): ReactElement {
+function MedicineIcon({ engaged, className, weight = 1 }: GateIconProps): ReactElement {
+  const w = weight;
+  const st = strokeStyle(w);
   return (
     <svg viewBox="0 0 48 48" className={className} aria-hidden>
       {/* Earth */}
-      <path {...STROKE} d="M9 36.5 Q24 33 39 36.5" opacity={0.85} />
+      <path {...st} d="M9 36.5 Q24 33 39 36.5" opacity={0.85} />
       {/* Roots */}
-      <g {...STROKE} strokeWidth={1.2} opacity={0.6}>
+      <g {...st} strokeWidth={1.2 * w} opacity={0.6}>
         <path d="M24 35 C24 38.5 21.5 40.5 18 42" />
         <path d="M24 35 C24 38.5 26.5 40.5 30 42" />
         <path d="M24 35.5 V43" />
@@ -48,7 +59,7 @@ function MedicineIcon({ engaged, className }: GateIconProps): ReactElement {
         <path d="M27.5 39.5 C29 40 30.5 39.8 32 39" />
       </g>
       {/* Stem */}
-      <path {...STROKE} d="M24 35 C23.4 31.5 24.4 28.5 24 25" />
+      <path {...st} d="M24 35 C23.4 31.5 24.4 28.5 24 25" />
 
       {/* Left leaf — the left lobe of the heart */}
       <motion.g
@@ -61,12 +72,12 @@ function MedicineIcon({ engaged, className }: GateIconProps): ReactElement {
         }
       >
         <path
-          {...STROKE}
+          {...st}
           d="M24 25 C17.5 24.5 11 20 11 13.5 C11 9.5 14 7 17.5 7 C21 7 24 10 24 14"
         />
         <motion.path
-          {...STROKE}
-          strokeWidth={1}
+          {...st}
+          strokeWidth={1 * w}
           d="M23 23 C20 20.5 17.5 17 16.5 12.5"
           initial={false}
           animate={{ pathLength: engaged ? 1 : 0.55, opacity: engaged ? 0.8 : 0.5 }}
@@ -85,12 +96,12 @@ function MedicineIcon({ engaged, className }: GateIconProps): ReactElement {
         }
       >
         <path
-          {...STROKE}
+          {...st}
           d="M24 25 C30.5 24.5 37 20 37 13.5 C37 9.5 34 7 30.5 7 C27 7 24 10 24 14"
         />
         <motion.path
-          {...STROKE}
-          strokeWidth={1}
+          {...st}
+          strokeWidth={1 * w}
           d="M25 23 C28 20.5 30.5 17 31.5 12.5"
           initial={false}
           animate={{ pathLength: engaged ? 1 : 0.55, opacity: engaged ? 0.8 : 0.5 }}
@@ -153,7 +164,9 @@ const CENTER_PIVOT = { transformBox: "view-box", transformOrigin: "24px 24px" } 
  * חשיפות אמת — a source of light radiating outward: what was hidden is brought to light.
  * While engaged the rays turn slowly and breathe, and the core brightens.
  */
-function RevelationsIcon({ engaged, className }: GateIconProps): ReactElement {
+function RevelationsIcon({ engaged, className, weight = 1 }: GateIconProps): ReactElement {
+  const w = weight;
+  const st = strokeStyle(w);
   return (
     <svg viewBox="0 0 48 48" className={className} aria-hidden>
       <motion.g
@@ -166,7 +179,7 @@ function RevelationsIcon({ engaged, className }: GateIconProps): ReactElement {
         }
       >
         <motion.g
-          {...STROKE}
+          {...st}
           style={CENTER_PIVOT}
           animate={engaged ? { scale: [1, 1.1, 1], opacity: 1 } : { scale: 1, opacity: 0.85 }}
           transition={
@@ -180,8 +193,8 @@ function RevelationsIcon({ engaged, className }: GateIconProps): ReactElement {
           ))}
         </motion.g>
         <motion.g
-          {...STROKE}
-          strokeWidth={1.2}
+          {...st}
+          strokeWidth={1.2 * w}
           style={CENTER_PIVOT}
           animate={engaged ? { scale: [1.1, 1, 1.1], opacity: 0.75 } : { scale: 1, opacity: 0.5 }}
           transition={
@@ -198,8 +211,8 @@ function RevelationsIcon({ engaged, className }: GateIconProps): ReactElement {
 
       {/* Halo */}
       <motion.circle
-        {...STROKE}
-        strokeWidth={1}
+        {...st}
+        strokeWidth={1 * w}
         cx={24}
         cy={24}
         r={8}
@@ -234,10 +247,11 @@ const LEFT_PAN_PIVOT = { transformBox: "view-box", transformOrigin: "10px 14px" 
 const RIGHT_PAN_PIVOT = { transformBox: "view-box", transformOrigin: "38px 14px" } as const;
 
 /** One hanging pan: two cords from the beam end and a shallow bowl. */
-function Pan({ x }: { x: number }): ReactElement {
+function Pan({ x, w }: { x: number; w: number }): ReactElement {
+  const st = strokeStyle(w);
   return (
-    <g {...STROKE}>
-      <path d={`M${x} 14 L${x - 5} 26 M${x} 14 L${x + 5} 26`} strokeWidth={1} opacity={0.75} />
+    <g {...st}>
+      <path d={`M${x} 14 L${x - 5} 26 M${x} 14 L${x + 5} 26`} strokeWidth={1 * w} opacity={0.75} />
       <path d={`M${x - 6} 26 H${x + 6} Q${x} 32 ${x - 6} 26 Z`} />
     </g>
   );
@@ -247,7 +261,9 @@ function Pan({ x }: { x: number }): ReactElement {
  * דיני צדק — balance scales. While engaged the beam weighs gently from side to side,
  * the pans keep hanging true, and the crown of the scales glows.
  */
-function JusticeIcon({ engaged, className }: GateIconProps): ReactElement {
+function JusticeIcon({ engaged, className, weight = 1 }: GateIconProps): ReactElement {
+  const w = weight;
+  const st = strokeStyle(w);
   const balance = (sign: 1 | -1) =>
     engaged
       ? { rotate: BEAM_TILT.map((a) => a * sign) }
@@ -257,20 +273,20 @@ function JusticeIcon({ engaged, className }: GateIconProps): ReactElement {
   return (
     <svg viewBox="0 0 48 48" className={className} aria-hidden>
       {/* Pillar and base */}
-      <path {...STROKE} d="M24 14 V40" />
-      <path {...STROKE} d="M16 41.5 H32" />
-      <path {...STROKE} strokeWidth={1.2} d="M19.5 41.5 Q24 37 28.5 41.5" opacity={0.7} />
+      <path {...st} d="M24 14 V40" />
+      <path {...st} d="M16 41.5 H32" />
+      <path {...st} strokeWidth={1.2 * w} d="M19.5 41.5 Q24 37 28.5 41.5" opacity={0.7} />
 
       {/* Beam with hanging pans */}
       <motion.g style={BEAM_PIVOT} initial={false} animate={balance(1)} transition={transition}>
-        <path {...STROKE} d="M10 14 Q24 11.5 38 14" />
+        <path {...st} d="M10 14 Q24 11.5 38 14" />
         <motion.g
           style={LEFT_PAN_PIVOT}
           initial={false}
           animate={balance(-1)}
           transition={transition}
         >
-          <Pan x={10} />
+          <Pan x={10} w={w} />
         </motion.g>
         <motion.g
           style={RIGHT_PAN_PIVOT}
@@ -278,7 +294,7 @@ function JusticeIcon({ engaged, className }: GateIconProps): ReactElement {
           animate={balance(-1)}
           transition={transition}
         >
-          <Pan x={38} />
+          <Pan x={38} w={w} />
         </motion.g>
       </motion.g>
 

@@ -2,16 +2,27 @@
  * Geometry and color math for the home gate ring.
  *
  * Angles are in degrees in "world" space: φ = 0 is the front of the ring (closest to the
- * viewer, bottom of the ellipse on screen), φ = 90 is screen-right, φ = 180 is the back.
- * Gate `i` sits at φ = θ + i·STEP, where θ is the ring rotation.
+ * viewer), φ = 180 is the back. Gate `i` sits at φ = θ + i·STEP, where θ is the ring
+ * rotation.
+ *
+ * The ring lies flat on desktop ("horizontal": front at the bottom of the ellipse, φ = 90
+ * screen-right) and stands up like a wheel on mobile ("vertical": a tall ellipse around the
+ * gates; the front gate at screen center, φ = 90 at the bottom, φ = −90 at the top, the
+ * front arc on the right and the far arc on the left).
  */
 
 import { GATES, rgbString } from "@/lib/gates";
 
 export const GATE_STEP_DEG = 360 / GATES.length;
 
-/** Vertical squash of the ring ellipse — how far the viewer looks down onto it. */
+export type RingOrientation = "horizontal" | "vertical";
+
+/** Vertical squash of the flat ring — how far the viewer looks down onto it. */
 export const RING_TILT = 0.3;
+/** Width of the standing ring relative to its height. */
+export const RING_TILT_VERTICAL = 0.55;
+/** How far gates on the standing ring bow toward its far side as they leave the front. */
+const VERTICAL_BOW = 0.08;
 
 const DEG = Math.PI / 180;
 
@@ -37,12 +48,30 @@ export function depthAt(phi: number): number {
   return (Math.cos(phi * DEG) + 1) / 2;
 }
 
-/** Screen offset from the ring center for a point on the ring of the given radius. */
-export function ringPoint(phi: number, radius: number): { x: number; y: number } {
+/**
+ * Screen offset from the ring center for a gate on the ring of the given radius. On the
+ * standing ring gates run up and down its middle, bowing slightly as they turn away.
+ */
+export function ringPoint(
+  phi: number,
+  radius: number,
+  orientation: RingOrientation = "horizontal",
+): { x: number; y: number } {
+  if (orientation === "vertical") {
+    return {
+      x: (Math.cos(phi * DEG) - 1) * radius * VERTICAL_BOW,
+      y: Math.sin(phi * DEG) * radius,
+    };
+  }
   return {
     x: Math.sin(phi * DEG) * radius,
     y: Math.cos(phi * DEG) * radius * RING_TILT,
   };
+}
+
+/** Horizontal offset of the ring's center from the stage center. */
+export function ringCenterOffsetX(radius: number, orientation: RingOrientation): number {
+  return orientation === "vertical" ? -radius * VERTICAL_BOW : 0;
 }
 
 /** Index of the gate currently closest to the front. */
@@ -85,22 +114,44 @@ const CONIC_SAMPLES = 36;
 
 /**
  * Conic gradient painting the ring. Conic angle α (clockwise from top) maps to world
- * angle φ = 180 − α once the square ring is squashed by {@link RING_TILT}.
+ * angle φ = 180 − α on the flat ring and φ = α − 90 on the standing one, once the square
+ * ring is squashed to its ellipse.
  */
-export function ringConicGradient(theta: number): string {
+export function ringConicGradient(
+  theta: number,
+  orientation: RingOrientation = "horizontal",
+): string {
   const stops: string[] = [];
   for (let k = 0; k <= CONIC_SAMPLES; k++) {
     const alpha = (k * 360) / CONIC_SAMPLES;
-    stops.push(`${rgbString(ringColorAt(180 - alpha, theta))} ${alpha}deg`);
+    const phi = orientation === "vertical" ? alpha - 90 : 180 - alpha;
+    stops.push(`${rgbString(ringColorAt(phi, theta))} ${alpha}deg`);
   }
   return `conic-gradient(from 0deg, ${stops.join(", ")})`;
 }
 
 /**
  * Ambient page background: each side of the screen glows with the ring color the viewer
- * sees on that side — front below, left and right flanks, the far arc above.
+ * sees on that side. Flat ring: front below, flanks left and right, far arc above.
+ * Standing ring: front at the center, top and bottom arcs above and below.
  */
-export function ambientBackground(theta: number): string {
+export function ambientBackground(
+  theta: number,
+  orientation: RingOrientation = "horizontal",
+): string {
+  if (orientation === "vertical") {
+    const front = ringColorAt(0, theta);
+    const top = ringColorAt(-90, theta);
+    const bottom = ringColorAt(90, theta);
+    const back = ringColorAt(180, theta);
+    return [
+      `radial-gradient(70% 40% at 50% 48%, ${rgbString(front, 0.5)}, transparent 75%)`,
+      `radial-gradient(90% 35% at 50% 0%, ${rgbString(top, 0.4)}, transparent 75%)`,
+      `radial-gradient(90% 35% at 50% 100%, ${rgbString(bottom, 0.4)}, transparent 75%)`,
+      `radial-gradient(40% 60% at 0% 50%, ${rgbString(back, 0.18)}, transparent 75%)`,
+      "#06060b",
+    ].join(", ");
+  }
   const front = ringColorAt(0, theta);
   const right = ringColorAt(90, theta);
   const left = ringColorAt(-90, theta);
@@ -115,7 +166,11 @@ export function ambientBackground(theta: number): string {
 }
 
 /** Soft colored floor inside the ring, lit by the gate in front. */
-export function ringFloorGradient(theta: number): string {
+export function ringFloorGradient(
+  theta: number,
+  orientation: RingOrientation = "horizontal",
+): string {
   const front = ringColorAt(0, theta);
-  return `radial-gradient(closest-side at 50% 62%, ${rgbString(front, 0.28)}, transparent 85%)`;
+  const at = orientation === "vertical" ? "62% 50%" : "50% 62%";
+  return `radial-gradient(closest-side at ${at}, ${rgbString(front, 0.28)}, transparent 85%)`;
 }

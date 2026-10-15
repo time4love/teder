@@ -1,6 +1,6 @@
 "use client";
 
-import type { PointerEvent, ReactElement } from "react";
+import type { PointerEvent, ReactElement, WheelEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,7 +16,11 @@ import {
 import type { AnimationPlaybackControls, MotionValue } from "framer-motion";
 import { ArrowLeft, DoorOpen } from "lucide-react";
 
+import { FrequencyWaves } from "@/components/home/FrequencyWaves";
 import { GateArch } from "@/components/home/GateArch";
+import { GateCircle } from "@/components/home/GateCircle";
+import { GateDiamond } from "@/components/home/GateDiamond";
+import { GateEmblem } from "@/components/home/GateEmblem";
 import {
   GATES,
   FREEDOM_PROTOCOL_HREF,
@@ -24,16 +28,20 @@ import {
 } from "@/lib/gates";
 import {
   RING_TILT,
+  RING_TILT_VERTICAL,
   ambientBackground,
   depthAt,
   frontGateIndex,
   gateAngle,
+  ringCenterOffsetX,
   ringConicGradient,
   ringFloorGradient,
   ringPoint,
   signedDeg,
   thetaToFront,
 } from "@/lib/gate-ring";
+import type { RingOrientation } from "@/lib/gate-ring";
+import { cn } from "@/lib/utils";
 
 /** Gate that faces the visitor on arrival: the archive that exists today. */
 const INITIAL_GATE_INDEX = 1;
@@ -49,10 +57,36 @@ const ENGAGE_HOLD_PX = 30;
 /** A gate further than this from the front is brought forward instead of entered. */
 const ENTER_MAX_OFFSET_DEG = 20;
 
+/** Below this width the ring stands up as a wheel turned by dragging (mobile). */
+const WHEEL_MEDIA_QUERY = "(max-width: 767px)";
+/** Ring rotation per pixel of swipe on the wheel. */
+const DRAG_DEG_PER_PX = 0.45;
+/** A touch that travels less than this is a tap, not a drag. */
+const DRAG_THRESHOLD_PX = 8;
+/** A swipe at least this long always moves the wheel on by one gate. */
+const SWIPE_STEP_PX = 30;
+/** Wheel/trackpad scroll rotation per pixel, and the pause before snapping to a gate. */
+const SCROLL_DEG_PER_PX = 0.12;
+const SCROLL_SNAP_MS = 180;
+/** On the wheel a settled gate stays open this long before the ring drifts again. */
+const WHEEL_IDLE_MS = 8000;
+
+/**
+ * How a gate is drawn: "ellipse" (a tall oval portal), "circle" (a round portal), "diamond"
+ * (a faceted standing diamond), "emblem" (its symbol, large and free-standing) or "arch"
+ * (a framed doorway). Design exploration — `?gate=<variant>` in the URL switches away from
+ * the ellipse.
+ */
+type GateVariant = "ellipse" | "circle" | "diamond" | "emblem" | "arch";
+
+const GATE_VARIANTS: readonly GateVariant[] = ["ellipse", "circle", "diamond", "emblem", "arch"];
+
 const GATE_WIDTH = 230;
 const GATE_HEIGHT = 320;
-/** Ring center as a fraction of the stage height. */
-const RING_CENTER_Y = 0.6;
+/** Ring center as a fraction of the stage height, per orientation. */
+const RING_CENTER_Y: Record<RingOrientation, number> = { horizontal: 0.6, vertical: 0.46 };
+/** Gates are drawn a little smaller on the narrow wheel. */
+const GATE_BASE_SCALE: Record<RingOrientation, number> = { horizontal: 1, vertical: 0.8 };
 
 /** Annulus that turns a square into the ring tube (radius 86%–100%). */
 const RING_MASK =
@@ -64,9 +98,12 @@ const RING_TUBE_SHADING =
 const TUBE_MID_FRACTION = 0.93;
 
 /**
- * Desktop home portal: three gates riding a 3D ring. The ring drifts while idle; hovering
- * a gate brings it to the front and opens it up, and clicking the front gate enters it.
- * The ring's colors and the page background follow whichever arc faces the visitor.
+ * Home portal: three gates riding a 3D ring. The ring drifts while idle, and its colors
+ * and the page background follow whichever arc faces the visitor.
+ *
+ * Desktop: the ring lies flat; hovering a gate brings it to the front and opens it up, and
+ * clicking the front gate enters it. Mobile: the ring stands up as a wheel; swiping (up/down
+ * or sideways) turns it and it settles on the nearest gate, tapping the front gate enters it.
  */
 export function GatePortal(): ReactElement {
   const reduceMotion = useReducedMotion() === true;
@@ -85,6 +122,48 @@ export function GatePortal(): ReactElement {
   const anchorRef = useRef<{ x: number; y: number } | null>(null);
 
   const [engaged, setEngaged] = useState<number | null>(null);
+  const [variant, setVariant] = useState<GateVariant>("ellipse");
+  const [orientation, setOrientation] = useState<RingOrientation>("horizontal");
+  const vertical = orientation === "vertical";
+
+  /** Touch drag on the wheel. */
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startTheta: number;
+    /** Swipe axis, locked once the touch has clearly moved. */
+    axis: "x" | "y" | null;
+    travel: number;
+  } | null>(null);
+  /** Set after a drag so the click that ends it does not enter a gate. */
+  const suppressClickRef = useRef(false);
+  const scrollSnapTimerRef = useRef<number | null>(null);
+  const wheelIdleTimerRef = useRef<number | null>(null);
+
+  /**
+   * Orientation as a motion value too, so the derived ring styles recompute when it flips
+   * (motion transforms only re-run when one of their inputs changes).
+   */
+  const orientationValue = useMotionValue<RingOrientation>("horizontal");
+
+  useEffect(() => {
+    const mq = window.matchMedia(WHEEL_MEDIA_QUERY);
+    const update = (): void => {
+      const next: RingOrientation = mq.matches ? "vertical" : "horizontal";
+      orientationValue.set(next);
+      setOrientation(next);
+    };
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [orientationValue]);
+
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("gate");
+    const match = GATE_VARIANTS.find((v) => v === requested);
+    if (match !== undefined) setVariant(match);
+  }, []);
 
   // Pointer parallax: the whole scene leans toward the cursor.
   const pointerX = useSpring(0, { stiffness: 50, damping: 18 });
@@ -92,10 +171,19 @@ export function GatePortal(): ReactElement {
   const sceneRotateY = useTransform(pointerX, (v) => v * 7);
   const sceneRotateX = useTransform(pointerY, (v) => v * -5);
 
-  const background = useTransform(theta, ambientBackground);
-  const ringGradient = useTransform(theta, ringConicGradient);
-  const floorGradient = useTransform(theta, ringFloorGradient);
+  const background = useTransform(() =>
+    ambientBackground(theta.get(), orientationValue.get()),
+  );
+  const ringGradient = useTransform(() =>
+    ringConicGradient(theta.get(), orientationValue.get()),
+  );
+  const floorGradient = useTransform(() =>
+    ringFloorGradient(theta.get(), orientationValue.get()),
+  );
   const ringSize = useTransform(radius, (r) => (r * 2) / TUBE_MID_FRACTION);
+  const ringOffsetX = useTransform(() =>
+    ringCenterOffsetX(radius.get(), orientationValue.get()),
+  );
 
   useAnimationFrame((_, delta) => {
     if (!driftingRef.current) return;
@@ -106,6 +194,10 @@ export function GatePortal(): ReactElement {
     if (resumeTimerRef.current !== null) {
       window.clearTimeout(resumeTimerRef.current);
       resumeTimerRef.current = null;
+    }
+    if (wheelIdleTimerRef.current !== null) {
+      window.clearTimeout(wheelIdleTimerRef.current);
+      wheelIdleTimerRef.current = null;
     }
   };
 
@@ -148,6 +240,21 @@ export function GatePortal(): ReactElement {
     scheduleDrift();
   }, [scheduleDrift]);
 
+  /**
+   * Wheel: settle on gate `index` and keep it open until the visitor has been idle a while,
+   * then let the ring drift again (there is no hover to tell us they moved on).
+   */
+  const settle = useCallback(
+    (index: number): void => {
+      engage(index);
+      wheelIdleTimerRef.current = window.setTimeout(() => {
+        wheelIdleTimerRef.current = null;
+        disengage();
+      }, WHEEL_IDLE_MS);
+    },
+    [disengage, engage],
+  );
+
   // Intro: the ring spins in and settles on the initial gate, then starts drifting.
   useEffect(() => {
     if (reduceMotion) return;
@@ -168,26 +275,112 @@ export function GatePortal(): ReactElement {
     const el = stageRef.current;
     if (el === null) return;
     const ro = new ResizeObserver(([entry]) => {
-      const w = entry.contentRect.width;
-      radius.set(Math.max(260, Math.min(w * 0.3, 470)));
+      const { width: w, height: h } = entry.contentRect;
+      radius.set(
+        vertical
+          ? Math.max(200, Math.min(h * 0.33, 280))
+          : Math.max(260, Math.min(w * 0.3, 470)),
+      );
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [radius]);
+  }, [radius, vertical]);
 
   // Arrow keys turn the ring one gate at a time.
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      const step =
+        e.key === "ArrowLeft" || e.key === "ArrowDown"
+          ? 1
+          : e.key === "ArrowRight" || e.key === "ArrowUp"
+            ? -1
+            : 0;
+      if (step === 0) return;
       const current = frontGateIndex(theta.get());
-      const step = e.key === "ArrowLeft" ? 1 : -1;
       engage((current + step + GATES.length) % GATES.length);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [engage, theta]);
 
-  useEffect(() => () => clearResumeTimer(), []);
+  useEffect(
+    () => () => {
+      clearResumeTimer();
+      if (scrollSnapTimerRef.current !== null) window.clearTimeout(scrollSnapTimerRef.current);
+    },
+    [],
+  );
+
+  /** Stop whatever the ring is doing so the visitor's hand takes over. */
+  const takeHold = (): void => {
+    clearResumeTimer();
+    driftingRef.current = false;
+    rotationRef.current?.stop();
+    lockedRef.current = false;
+  };
+
+  const handleWheelPointerDown = (e: PointerEvent<HTMLDivElement>): void => {
+    if (!e.isPrimary) return;
+    takeHold();
+    suppressClickRef.current = false;
+    dragRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startTheta: theta.get(),
+      axis: null,
+      travel: 0,
+    };
+  };
+
+  const handleWheelPointerMove = (e: PointerEvent<HTMLDivElement>): void => {
+    const drag = dragRef.current;
+    if (drag === null || drag.pointerId !== e.pointerId) return;
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    if (drag.axis === null) {
+      if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+      drag.axis = Math.abs(dy) >= Math.abs(dx) ? "y" : "x";
+      // Only a real swipe captures the pointer — a tap must still reach the gate's link.
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+    // Swiping up or left brings the next gate to the front.
+    drag.travel = drag.axis === "y" ? dy : dx;
+    theta.set(drag.startTheta + drag.travel * DRAG_DEG_PER_PX);
+  };
+
+  const handleWheelPointerUp = (e: PointerEvent<HTMLDivElement>): void => {
+    const drag = dragRef.current;
+    if (drag === null || drag.pointerId !== e.pointerId) return;
+    dragRef.current = null;
+    if (drag.axis === null) return; // A tap: the gate's own click handler decides.
+    suppressClickRef.current = true;
+    // Settle on the gate nearest the finger; a short swipe still moves on by one gate.
+    const startIndex = frontGateIndex(drag.startTheta);
+    let index = frontGateIndex(theta.get());
+    if (index === startIndex && Math.abs(drag.travel) >= SWIPE_STEP_PX) {
+      const step = drag.travel < 0 ? 1 : -1;
+      index = (startIndex + step + GATES.length) % GATES.length;
+    }
+    settle(index);
+  };
+
+  const handleWheelScroll = (e: WheelEvent<HTMLDivElement>): void => {
+    takeHold();
+    theta.set(theta.get() - e.deltaY * SCROLL_DEG_PER_PX);
+    if (scrollSnapTimerRef.current !== null) window.clearTimeout(scrollSnapTimerRef.current);
+    scrollSnapTimerRef.current = window.setTimeout(() => {
+      scrollSnapTimerRef.current = null;
+      settle(frontGateIndex(theta.get()));
+    }, SCROLL_SNAP_MS);
+  };
+
+  /** True once for the click that ends a drag, so it does not enter a gate. */
+  const consumeDragClick = useCallback((): boolean => {
+    if (!suppressClickRef.current) return false;
+    suppressClickRef.current = false;
+    return true;
+  }, []);
 
   const handlePointerMove = (e: PointerEvent<HTMLDivElement>): void => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -227,8 +420,10 @@ export function GatePortal(): ReactElement {
     else scheduleDrift();
   };
 
+  const ringCenterY = RING_CENTER_Y[orientation];
+
   return (
-    <div className="relative isolate h-[calc(100dvh-4rem)] min-h-[640px] w-full overflow-hidden text-white">
+    <div className="relative isolate h-[calc(100dvh-4rem)] min-h-[560px] w-full overflow-hidden text-white md:min-h-[640px]">
       {/* Ambient background reflecting the visible arcs of the ring (extends under the header) */}
       <motion.div
         aria-hidden
@@ -244,12 +439,19 @@ export function GatePortal(): ReactElement {
         }}
       />
 
+      <FrequencyWaves
+        theta={theta}
+        pointerX={pointerX}
+        energized={engaged !== null}
+        still={reduceMotion}
+      />
+
       {/* Title */}
       <motion.div
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-        className="pointer-events-none absolute inset-x-0 top-6 z-[200] flex flex-col items-center gap-2 text-center"
+        className="pointer-events-none absolute inset-x-0 top-6 z-[200] hidden flex-col items-center gap-2 text-center md:flex"
       >
         <Image
           src="/logo.png"
@@ -264,9 +466,22 @@ export function GatePortal(): ReactElement {
       {/* Stage */}
       <div
         ref={stageRef}
-        onPointerMove={handlePointerMove}
-        onPointerLeave={handlePointerLeave}
-        className="absolute inset-0 [perspective:1400px]"
+        {...(vertical
+          ? {
+              onPointerDown: handleWheelPointerDown,
+              onPointerMove: handleWheelPointerMove,
+              onPointerUp: handleWheelPointerUp,
+              onPointerCancel: handleWheelPointerUp,
+              onWheel: handleWheelScroll,
+            }
+          : {
+              onPointerMove: handlePointerMove,
+              onPointerLeave: handlePointerLeave,
+            })}
+        className={cn(
+          "absolute inset-0 [perspective:1400px]",
+          vertical && "touch-none select-none",
+        )}
       >
         <motion.div
           className="absolute inset-0"
@@ -276,13 +491,16 @@ export function GatePortal(): ReactElement {
           <motion.div
             aria-hidden
             className="pointer-events-none absolute left-1/2"
+            style={{ top: `${ringCenterY * 100}%`, x: ringOffsetX }}
+          >
+          <motion.div
+            className="absolute left-0 top-0"
             style={{
-              top: `${RING_CENTER_Y * 100}%`,
               width: ringSize,
               height: ringSize,
               x: "-50%",
               y: "-50%",
-              scaleY: RING_TILT,
+              ...(vertical ? { scaleX: RING_TILT_VERTICAL } : { scaleY: RING_TILT }),
             }}
           >
             <motion.div
@@ -305,11 +523,12 @@ export function GatePortal(): ReactElement {
             <div
               className="absolute inset-0 rounded-full"
               style={{
-                background: "linear-gradient(to bottom, rgba(6,6,11,0.75), transparent 55%)",
+                background: `linear-gradient(${vertical ? "to right" : "to bottom"}, rgba(6,6,11,0.75), transparent 55%)`,
                 maskImage: RING_MASK,
                 WebkitMaskImage: RING_MASK,
               }}
             />
+          </motion.div>
           </motion.div>
 
           {/* Gates */}
@@ -320,7 +539,11 @@ export function GatePortal(): ReactElement {
               theta={theta}
               radius={radius}
               engaged={engaged === i}
-              onActivate={engage}
+              variant={variant}
+              orientation={orientation}
+              orientationValue={orientationValue}
+              onActivate={vertical ? settle : engage}
+              consumeDragClick={consumeDragClick}
             />
           ))}
         </motion.div>
@@ -359,6 +582,11 @@ interface GateOnRingProps {
   radius: MotionValue<number>;
   engaged: boolean;
   onActivate: (index: number) => void;
+  /** True if this click ends a drag of the wheel and must not enter the gate. */
+  consumeDragClick: () => boolean;
+  variant: GateVariant;
+  orientation: RingOrientation;
+  orientationValue: MotionValue<RingOrientation>;
 }
 
 /** Places one gate on the ring and scales / dims it by depth. */
@@ -368,13 +596,23 @@ function GateOnRing({
   radius,
   engaged,
   onActivate,
+  consumeDragClick,
+  variant,
+  orientation,
+  orientationValue,
 }: GateOnRingProps): ReactElement {
   const gate = GATES[index];
+  const vertical = orientation === "vertical";
+  const baseScale = GATE_BASE_SCALE[orientation];
   const phi = useTransform(theta, (t) => gateAngle(t, index));
   const depth = useTransform(phi, depthAt);
-  const x = useTransform([phi, radius], ([p, r]: number[]) => ringPoint(p, r).x);
-  const y = useTransform([phi, radius], ([p, r]: number[]) => ringPoint(p, r).y);
-  const scale = useTransform(depth, (d) => 0.5 + 0.5 * d);
+  const x = useTransform(
+    () => ringPoint(phi.get(), radius.get(), orientationValue.get()).x,
+  );
+  const y = useTransform(
+    () => ringPoint(phi.get(), radius.get(), orientationValue.get()).y,
+  );
+  const scale = useTransform(depth, (d) => (0.5 + 0.5 * d) * baseScale);
   const opacity = useTransform(depth, (d) => 0.4 + 0.6 * d);
   const zIndex = useTransform(depth, (d) => Math.round(d * 100));
   const filter = useTransform(
@@ -386,12 +624,13 @@ function GateOnRing({
     <motion.div
       className="absolute left-1/2"
       style={{
-        top: `${RING_CENTER_Y * 100}%`,
+        top: `${RING_CENTER_Y[orientation] * 100}%`,
         width: GATE_WIDTH,
         height: GATE_HEIGHT,
         marginLeft: -GATE_WIDTH / 2,
-        marginTop: -GATE_HEIGHT,
-        transformOrigin: "50% 100%",
+        // Flat ring: gates stand on it. Standing wheel: gates are centered on its rim.
+        marginTop: vertical ? -GATE_HEIGHT / 2 : -GATE_HEIGHT,
+        transformOrigin: vertical ? "50% 50%" : "50% 100%",
         x,
         y,
         scale,
@@ -405,16 +644,36 @@ function GateOnRing({
         data-gate-index={index}
         aria-label={`כניסה ל${gate.title}`}
         onFocus={() => onActivate(index)}
+        draggable={false}
         onClick={(e) => {
+          if (consumeDragClick()) {
+            e.preventDefault();
+            return;
+          }
           // A gate away from the front is brought forward first; entering takes a second click.
           if (Math.abs(signedDeg(phi.get())) > ENTER_MAX_OFFSET_DEG) {
             e.preventDefault();
             onActivate(index);
           }
         }}
-        className="block h-full w-full rounded-t-full focus-visible:outline-none"
+        className={cn(
+          "block h-full w-full focus-visible:outline-none",
+          variant === "arch" && "rounded-t-full",
+        )}
       >
-        <GateArch gate={gate} engaged={engaged} />
+        {variant === "arch" ? (
+          <GateArch gate={gate} engaged={engaged} />
+        ) : variant === "emblem" ? (
+          <GateEmblem gate={gate} engaged={engaged} />
+        ) : variant === "diamond" ? (
+          <GateDiamond gate={gate} engaged={engaged} />
+        ) : (
+          <GateCircle
+            gate={gate}
+            engaged={engaged}
+            shape={variant === "ellipse" ? "ellipse" : "circle"}
+          />
+        )}
       </Link>
     </motion.div>
   );
