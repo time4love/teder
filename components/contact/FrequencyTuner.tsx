@@ -491,9 +491,8 @@ export function FrequencyTuner(): ReactElement {
         </div>
       </div>
 
-      {/* Footer: privacy, direct links, sound */}
+      {/* Footer: direct links, sound */}
       <div className="mb-6 mt-4 flex w-full max-w-[680px] flex-col items-center gap-3 text-center">
-        <p className="text-sm text-white/60">השידור עובר ישירות. אנחנו לא אוגרים מידע.</p>
         <nav aria-label="ערוצי קשר ישירים" className="flex flex-wrap items-center justify-center gap-2">
           {STATIONS.map((s) => (
             <a
