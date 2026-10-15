@@ -283,9 +283,6 @@ export function FrequencyTuner(): ReactElement {
         <h1 className="font-heading text-5xl font-bold tracking-tight md:text-6xl">
           כוונו לתדר
         </h1>
-        <p className="max-w-md text-base text-white/65 md:text-lg">
-          סובבו את החוגה עד שהשידור נקי, ושדרו אלינו ישירות.
-        </p>
       </motion.div>
 
       <div className="flex-1" />
