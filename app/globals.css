@@ -102,3 +102,25 @@
     transform: translateX(450%) skewX(-12deg);
   }
 }
+
+/* Radio static on the contact page: the noise texture jumps around like a dead channel. */
+@keyframes static-shift {
+  0% {
+    background-position: 0 0;
+  }
+  20% {
+    background-position: -37px 21px;
+  }
+  40% {
+    background-position: 53px -44px;
+  }
+  60% {
+    background-position: -12px 68px;
+  }
+  80% {
+    background-position: 81px 9px;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
