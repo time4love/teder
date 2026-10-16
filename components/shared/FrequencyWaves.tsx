@@ -55,6 +55,8 @@ export interface FrequencyWavesProps {
   ribbons?: readonly Ribbon[];
   /** Change this value to send a surge through the waves. */
   pulseKey?: number;
+  /** Placement of the canvas; defaults to filling the screen behind the page. */
+  className?: string;
 }
 
 /**
@@ -68,6 +70,7 @@ export function FrequencyWaves({
   still,
   ribbons = BOTTOM_RIBBONS,
   pulseKey,
+  className = "pointer-events-none fixed inset-0 -z-10 h-full w-full",
 }: FrequencyWavesProps): ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const energizedRef = useRef(energized);
@@ -166,7 +169,7 @@ export function FrequencyWaves({
     <canvas
       ref={canvasRef}
       aria-hidden
-      className="pointer-events-none fixed inset-0 -z-10 h-full w-full"
+      className={className}
     />
   );
 }
