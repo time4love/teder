@@ -96,8 +96,9 @@ export function dominantCategory(
 }
 
 /**
- * Groups playlists (already in display order) into categories. Categories appear in the
- * order of their first playlist, so the author's playlist ordering carries over.
+ * Groups playlists (already in display order) into categories. Categories follow their
+ * `sort_order` (set by the site's author); ties keep the order of their first playlist,
+ * and playlists without a category come last.
  */
 export function buildArchive(
   playlists: Playlist[],
@@ -139,8 +140,15 @@ export function buildArchive(
     });
   }
 
-  return Array.from(groups.values()).map((g) => ({
-    ...g,
-    rgb: categoryColor(g.id === UNCATEGORIZED_ID ? null : g.id, categories),
-  }));
+  const orderOf = new Map(categories.map((c) => [c.id, c.sort_order]));
+  const rank = (id: string): number =>
+    id === UNCATEGORIZED_ID ? Number.POSITIVE_INFINITY : (orderOf.get(id) ?? 0);
+
+  // Array sort is stable, so equal sort_order keeps first-playlist order.
+  return Array.from(groups.values())
+    .sort((a, b) => rank(a.id) - rank(b.id))
+    .map((g) => ({
+      ...g,
+      rgb: categoryColor(g.id === UNCATEGORIZED_ID ? null : g.id, categories),
+    }));
 }
