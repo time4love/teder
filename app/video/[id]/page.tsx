@@ -2,15 +2,25 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { VideoFocusRoom } from "@/components/video/VideoFocusRoom";
+import type { VideoPlaylistContext } from "@/components/video/VideoFocusRoom";
+import { categoryColor, dominantCategory, videoThumb } from "@/lib/archive";
 import { SITE_ORIGIN, absoluteOgImageUrl } from "@/lib/site";
 import { createPublicClient } from "@/utils/supabase/public";
 
-import type { Video } from "@/types/database";
+import type { Category, Video } from "@/types/database";
 
-type PlaylistMembershipRow = {
+type EpisodeVideo = Pick<Video, "id" | "title" | "cover_image_url" | "youtube_url" | "category_id">;
+
+type PlaylistEpisodeRow = {
   playlist_id: string;
+  position: number;
   playlists: { title: string } | { title: string }[] | null;
+  videos: EpisodeVideo | EpisodeVideo[] | null;
 };
+
+function one<T>(v: T | T[] | null): T | null {
+  return Array.isArray(v) ? (v[0] ?? null) : v;
+}
 
 const OG_VIDEO_FALLBACK = "צפו בסרטון המלא בתדר-ישר-אל.";
 
@@ -110,23 +120,50 @@ export default async function VideoPage({
 
   const row = video as Video;
 
-  // Every playlist this video is in — the back link picks the one in `?playlist=`.
+  // Every playlist this video is in, with all its episodes — the page shows where the
+  // video sits in the one the visitor came from (`?playlist=`).
   const { data: memberships, error: membershipError } = await supabase
     .from("playlist_videos")
-    .select("playlist_id, playlists(title)")
+    .select("playlist_id")
     .eq("video_id", row.id);
-
   if (membershipError !== null) {
-    console.error("[video/[id]] playlists", membershipError.message);
+    console.error("[video/[id]] memberships", membershipError.message);
   }
+  const playlistIds = (memberships ?? []).map((m: { playlist_id: string }) => m.playlist_id);
 
-  const playlistTitles: Record<string, string> = {};
-  for (const m of (memberships ?? []) as PlaylistMembershipRow[]) {
-    const pl = Array.isArray(m.playlists) ? m.playlists[0] : m.playlists;
-    if (pl !== undefined && pl !== null && typeof pl.title === "string") {
-      playlistTitles[m.playlist_id] = pl.title;
-    }
+  const [episodesRes, categoriesRes] = await Promise.all([
+    playlistIds.length > 0
+      ? supabase
+          .from("playlist_videos")
+          .select(
+            "playlist_id, position, playlists(title), videos(id, title, cover_image_url, youtube_url, category_id)",
+          )
+          .in("playlist_id", playlistIds)
+          .order("position", { ascending: true })
+      : Promise.resolve({ data: [] as PlaylistEpisodeRow[], error: null }),
+    supabase.from("categories").select("*"),
+  ]);
+  if (episodesRes.error !== null) {
+    console.error("[video/[id]] episodes", episodesRes.error.message);
   }
+  const categories = (categoriesRes.data ?? []) as Category[];
+
+  const playlists: VideoPlaylistContext[] = playlistIds.map((pid) => {
+    const rows = ((episodesRes.data ?? []) as PlaylistEpisodeRow[]).filter(
+      (r) => r.playlist_id === pid,
+    );
+    const videos = rows
+      .map((r) => one(r.videos))
+      .filter((v): v is EpisodeVideo => v !== null);
+    const categoryId = dominantCategory(videos.map((v) => ({ video: v })));
+    return {
+      id: pid,
+      title: one(rows[0]?.playlists ?? null)?.title ?? "",
+      rgb: categoryColor(categoryId, categories),
+      categoryName: categories.find((c) => c.id === categoryId)?.name ?? null,
+      episodes: videos.map((v) => ({ id: v.id, title: v.title, thumb: videoThumb(v) })),
+    };
+  });
 
   const shareUrl = `${SITE_ORIGIN}/video/${row.id}`;
   const descTrim =
@@ -144,8 +181,9 @@ export default async function VideoPage({
         title: row.title,
         description: row.description,
         youtube_url: row.youtube_url,
+        thumb: videoThumb(row),
       }}
-      playlistTitles={playlistTitles}
+      playlists={playlists}
       shareUrl={shareUrl}
       shareText={shareText}
     />

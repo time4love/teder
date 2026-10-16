@@ -31,7 +31,7 @@ function mix(a: Rgb, b: Rgb, t: number): Rgb {
 }
 
 /** Shades of the gate's color across the waves: deeper on the left, lighter on the right. */
-function gatePalette(rgb: Rgb): WavePalette {
+export function gatePalette(rgb: Rgb): WavePalette {
   return {
     left: mix(rgb, [20, 60, 110], 0.35),
     front: rgb,

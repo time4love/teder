@@ -10,7 +10,17 @@ import { FREEDOM_PROTOCOL_HREF, FREEDOM_PROTOCOL_TITLE } from "@/lib/gates";
 import { cn } from "@/lib/utils";
 
 /** Pages with a dark full-screen scene behind the header. */
-const DARK_PAGES: ReadonlySet<string> = new Set(["/", "/about", "/contact", "/medicine", "/justice"]);
+const DARK_PAGES: ReadonlySet<string> = new Set([
+  "/",
+  "/about",
+  "/contact",
+  "/medicine",
+  "/justice",
+  "/revelations",
+]);
+
+/** Sections whose every page is dark: playlists and videos. */
+const DARK_PREFIXES: readonly string[] = ["/playlist/", "/video/"];
 
 const NAV_LINKS: { href: string; label: string }[] = [
   { href: FREEDOM_PROTOCOL_HREF, label: FREEDOM_PROTOCOL_TITLE },
@@ -24,7 +34,9 @@ const NAV_LINKS: { href: string; label: string }[] = [
 export function Header(): JSX.Element {
   const [open, setOpen] = React.useState(false);
   /** Dark, immersive pages — the header turns translucent over them. */
-  const onPortal = DARK_PAGES.has(usePathname());
+  const pathname = usePathname();
+  const onPortal =
+    DARK_PAGES.has(pathname) || DARK_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
   React.useEffect(() => {
     if (!open) return;
